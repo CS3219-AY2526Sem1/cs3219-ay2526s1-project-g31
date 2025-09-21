@@ -10,3 +10,13 @@ services:
       - ./ui:/app
       - /app/node_modules
       - /app/.next
+  user-service:
+    container_name: user-service
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./user-service:/app
+      - /app/node_modules
