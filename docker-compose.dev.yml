@@ -20,6 +20,16 @@ services:
     volumes:
       - ./user-service:/app
       - /app/node_modules
+  matching-service:
+    container_name: matching-service
+    build:
+      context: ./matching-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./matching-service:/app
+      - /app/node_modules
   question-service:
     container_name: question-service
     build:
