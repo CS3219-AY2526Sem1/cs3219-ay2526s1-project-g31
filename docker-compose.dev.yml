@@ -5,7 +5,9 @@ services:
       context: ./ui
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "${UI_PORT}:${UI_PORT}"
+    env_file:
+      - .env
     volumes:
       - ./ui:/app
       - /app/node_modules
@@ -16,7 +18,9 @@ services:
       context: ./user-service
       dockerfile: Dockerfile.dev
     ports:
-      - "3001:3001"
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    env_file:
+      - .env
     volumes:
       - ./user-service:/app
       - /app/node_modules
@@ -26,7 +30,9 @@ services:
       context: ./matching-service
       dockerfile: Dockerfile.dev
     ports:
-      - "3002:3002"
+      - "${MATCHING_SERVICE_PORT}:${MATCHING_SERVICE_PORT}"
+    env_file:
+      - .env
     volumes:
       - ./matching-service:/app
       - /app/node_modules
@@ -36,7 +42,9 @@ services:
       context: ./question-service
       dockerfile: Dockerfile.dev
     ports:
-      - "3003:3003"
+      - "${QUESTION_SERVICE_PORT}:${QUESTION_SERVICE_PORT}"
+    env_file:
+      - .env
     volumes:
       - ./question-service:/app
       - /app/node_modules
@@ -46,7 +54,9 @@ services:
       context: ./collaboration-service
       dockerfile: Dockerfile.dev
     ports:
-      - "3004:3004"
+      - "${COLLABORATION_SERVICE_PORT}:${COLLABORATION_SERVICE_PORT}"
+    env_file:
+      - .env
     volumes:
       - ./collaboration-service:/app
       - /app/node_modules
