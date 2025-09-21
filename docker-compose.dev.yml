@@ -40,3 +40,13 @@ services:
     volumes:
       - ./question-service:/app
       - /app/node_modules
+  collaboration-service:
+    container_name: collaboration-service
+    build:
+      context: ./collaboration-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./collaboration-service:/app
+      - /app/node_modules
