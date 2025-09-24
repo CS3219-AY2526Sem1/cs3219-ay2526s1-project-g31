@@ -1,4 +1,3 @@
-import { User } from "@shared/models/user";
 import passport from "passport";
 import { Strategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import { PrismaClient } from "@prisma/client";

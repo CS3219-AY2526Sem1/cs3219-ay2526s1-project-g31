@@ -1,10 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import authenticateUser from "../../../shared/middleware/authenticateUser";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-router.get('/user/:id', async (req, res) => {
+router.get('/:id', authenticateUser, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.params.id }
@@ -16,7 +17,7 @@ router.get('/user/:id', async (req, res) => {
     }
 });
 
-router.put('/user/:id', async (req, res) => {
+router.put('/:id', authenticateUser, async (req, res) => {
     try {
         const { displayName, firstName, lastName, picture, email } = req.body;
         const user = await prisma.user.update({
@@ -29,7 +30,7 @@ router.put('/user/:id', async (req, res) => {
     }
 });
 
-router.delete('/user/:id', async (req, res) => {
+router.delete('/:id', authenticateUser, async (req, res) => {
     try {
         await prisma.user.delete({
             where: { id: req.params.id }

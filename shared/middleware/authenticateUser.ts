@@ -1,22 +1,26 @@
 import axios from "axios";
 import { Request, Response, NextFunction } from "express";
+import { USER_SERVICE_BASE_URL } from "../constants/common";
+import { parse } from "cookie";
 
-// Configure this to point to your user service
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || "http://localhost:3001/api/auth/me";
-
-export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
+export default async function authenticateUser(req: Request, res: Response, next: NextFunction) {
     try {
-        // Forward the user's cookies to the user service
-        const response = await axios.get(USER_SERVICE_URL, {
+        const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+        if (!cookies['connect.sid']) {
+            return res.status(401).json({ error: "No session cookie" });
+        }
+        const sessionCookie = `connect.sid=${cookies['connect.sid']}`
+        const response = await axios.get(`${USER_SERVICE_BASE_URL}/api/auth/me`, {
+            headers: {
+                cookie: sessionCookie,
+            },
             withCredentials: true,
         });
-
-        if (response.data.authenticated) {
-            return next();
-        } else {
+        if (!response.data.authenticated) {
             return res.status(401).json({ error: "Not authenticated" });
         }
+        return next();
     } catch (err) {
-        return res.status(401).json({ error: "Not authenticated" });
+        return res.status(401).json({ error: err });
     }
 }

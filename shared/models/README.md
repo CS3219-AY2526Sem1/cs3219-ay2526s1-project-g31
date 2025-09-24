@@ -1,2 +1,0 @@
-### Overview
-This directory contains shared models and constants used across multiple services in the project. These models define the data structures and types that are common to different parts of the application, ensuring consistency and reducing redundancy.

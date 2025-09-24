@@ -5,9 +5,9 @@ import session from "express-session";
 import type { Request, Response } from "express";
 import passport from "passport";
 import "./strategies/google";
+import { UI_BASE_URL } from "../../shared/constants/common";
 
 const app = express();
-const UI_BASE_URL = `${process.env.BASE_URL}:${process.env.UI_PORT}`;
 
 app.use(express.json());
 app.use(session({
