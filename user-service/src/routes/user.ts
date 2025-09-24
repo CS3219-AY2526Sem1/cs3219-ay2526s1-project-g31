@@ -8,7 +8,7 @@ const router = Router();
 router.get('/:id', authenticateUser, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: req.params.id }
+            where: { google_id: req.params.id }
         });
         if (!user) return res.status(404).json({ error: "User not found" });
         res.json(user);
@@ -21,7 +21,7 @@ router.put('/:id', authenticateUser, async (req, res) => {
     try {
         const { displayName, firstName, lastName, picture, email } = req.body;
         const user = await prisma.user.update({
-            where: { id: req.params.id },
+            where: { google_id: req.params.id },
             data: { displayName, firstName, lastName, picture, email }
         });
         res.json(user);
@@ -33,7 +33,7 @@ router.put('/:id', authenticateUser, async (req, res) => {
 router.delete('/:id', authenticateUser, async (req, res) => {
     try {
         await prisma.user.delete({
-            where: { id: req.params.id }
+            where: { google_id: req.params.id },
         });
         res.json({ message: "User deleted successfully" });
     } catch (err) {
