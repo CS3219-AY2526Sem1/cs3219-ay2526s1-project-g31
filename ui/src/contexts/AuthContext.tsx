@@ -24,14 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 const data = await response.json();
                 if (data.authenticated) {
-                    // TODO: Replace with actual user data from backend
-                    setUser(data.user || { id: 'unknown', name: 'User', email: 'user@example.com' });
-                } else {
-                    setUser(null);
+                    setUser(data.user);
+                    return;
                 }
-            } else {
-                setUser(null);
             }
+            setUser(null);
         } catch (error) {
             console.error('Auth check failed:', error);
             setUser(null);

@@ -10,10 +10,3 @@ const PORT = process.env.USER_SERVICE_PORT;
 app.listen(PORT, () => {
     console.log(`User Service is running on port ${PORT}`);
 });
-
-/**
- * TODO:
- * - login ui, test protected routes (done)
- * - user storage on mongodb + user schema
- * - redis session store (optional)
- */
