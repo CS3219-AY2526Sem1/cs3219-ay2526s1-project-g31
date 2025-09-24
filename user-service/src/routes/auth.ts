@@ -1,9 +1,9 @@
 import { Router } from "express";
 import passport from "passport";
 import { User } from '@shared/models/user';
+import { UI_BASE_URL } from "../../../shared/constants/common";
 
 const router = Router();
-const UI_BASE_URL = `${process.env.BASE_URL}:${process.env.UI_PORT}`;
 
 // Redirect to google for authentication
 router.get('/google', passport.authenticate('google'));
@@ -12,6 +12,7 @@ router.get('/google', passport.authenticate('google'));
 router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: `${UI_BASE_URL}/auth/login` }),
     (req, res) => {
+        // Redirect to homepage
         res.redirect(UI_BASE_URL);
     }
 );
@@ -24,12 +25,7 @@ router.get('/me', (req, res) => {
     const user = req.user as User
     res.status(200).json({
         authenticated: true,
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            picture: user.picture
-        }
+        user: user
     });
 });
 
@@ -39,7 +35,10 @@ router.post('/logout', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Could not log out' });
         }
-        res.json({ message: 'Logged out successfully' });
+        req.session.destroy(() => {
+            res.clearCookie('connect.sid');
+            res.json({ message: 'Logged out successfully' });
+        });
     });
 });
 

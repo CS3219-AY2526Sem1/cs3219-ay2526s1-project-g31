@@ -29,24 +29,24 @@ export default function Login() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
             <div className="w-full max-w-md">
-                <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
+                <div className="bg-gray-800 shadow-2xl rounded-2xl p-8 border border-gray-700">
                     {/* Logo/Header Section */}
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in to PeerPrep</h1>
-                        <p className="text-gray-600">Get started with your Google account</p>
+                        <h1 className="text-3xl font-bold text-gray-100 mb-2">Sign in to PeerPrep</h1>
+                        <p className="text-gray-300">Get started with your Google account</p>
                     </div>
 
                     {/* Login Button */}
                     <button
                         onClick={handleGoogleLogin}
-                        className="w-full bg-white text-gray-900 font-semibold py-3 px-4 border border-gray-300 rounded-lg shadow-sm transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                        className="w-full bg-gray-700 text-gray-100 font-semibold py-3 px-4 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-600 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
                     >
                         <div className="flex items-center justify-center space-x-3">
                             {/* Google Icon */}

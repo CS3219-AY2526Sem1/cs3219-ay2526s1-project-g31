@@ -20,23 +20,23 @@ export default function Spinner({
 
     // Color classes
     const colorClasses = {
-        blue: 'border-blue-600',
-        gray: 'border-gray-600',
-        green: 'border-green-600',
-        red: 'border-red-600',
-        white: 'border-white-600'
+        blue: 'border-blue-400',
+        gray: 'border-gray-400',
+        green: 'border-green-400',
+        red: 'border-red-400',
+        white: 'border-white'
     };
 
     const spinnerElement = (
         <div className="text-center">
             <div className={`inline-block animate-spin rounded-full border-b-2 mb-4 ${sizeClasses[size]} ${colorClasses[color]}`}></div>
-            {message && <p className="text-gray-600 font-medium">{message}</p>}
+            {message && <p className="text-gray-300 font-medium">{message}</p>}
         </div>
     );
 
     if (fullScreen) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
                 {spinnerElement}
             </div>
         );
