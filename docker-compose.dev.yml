@@ -12,6 +12,7 @@ services:
       - ./ui:/app
       - /app/node_modules
       - /app/.next
+      - ./shared:/shared
   user-service:
     container_name: user-service
     build:
@@ -24,6 +25,7 @@ services:
     volumes:
       - ./user-service:/app
       - /app/node_modules
+      - ./shared:/shared
   matching-service:
     container_name: matching-service
     build:
@@ -36,6 +38,7 @@ services:
     volumes:
       - ./matching-service:/app
       - /app/node_modules
+      - ./shared:/shared
   question-service:
     container_name: question-service
     build:
@@ -48,6 +51,7 @@ services:
     volumes:
       - ./question-service:/app
       - /app/node_modules
+      - ./shared:/shared
   collaboration-service:
     container_name: collaboration-service
     build:
@@ -60,3 +64,4 @@ services:
     volumes:
       - ./collaboration-service:/app
       - /app/node_modules
+      - ./shared:/shared
