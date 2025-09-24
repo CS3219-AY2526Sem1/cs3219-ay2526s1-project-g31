@@ -19,11 +19,19 @@ router.get('/me', (req, res) => {
     if (!req.isAuthenticated()) {
         return res.status(401).json({ authenticated: false });
     }
-    res.status(200).json({ authenticated: true });
+    res.status(200).json({
+        authenticated: true,
+        user: {
+            id: "req.user.id",
+            name: "req.user.name",
+            email: "req.user.email",
+            picture: undefined
+        }
+    });
 });
 
 // Logout
-router.get('/logout', (req, res) => {
+router.post('/logout', (req, res) => {
     req.logout((err) => {
         if (err) {
             return res.status(500).json({ error: 'Could not log out' });

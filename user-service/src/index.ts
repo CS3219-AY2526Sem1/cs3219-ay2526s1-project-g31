@@ -13,7 +13,7 @@ app.listen(PORT, () => {
 
 /**
  * TODO:
- * - login ui, test protected routes
+ * - login ui, test protected routes (done)
  * - user storage on mongodb + user schema
  * - redis session store (optional)
  */
