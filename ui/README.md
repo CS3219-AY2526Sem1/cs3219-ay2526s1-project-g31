@@ -1,8 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
-First, run the development server:
+To run the development server:
+
+copy .`env.example` to `.env` and fill in the required environment variables if empty.
 
 ```bash
 npm run dev
