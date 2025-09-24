@@ -51,7 +51,7 @@ export default function Header() {
                             >
                                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
                                     <span className="text-sm font-medium text-gray-600">
-                                        {user.name?.charAt(0).toUpperCase()}
+                                        {user.displayName?.charAt(0).toUpperCase() || ""}
                                     </span>
                                 </div>
                             </Link>

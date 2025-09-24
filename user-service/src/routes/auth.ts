@@ -12,6 +12,7 @@ router.get('/google', passport.authenticate('google'));
 router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: `${UI_BASE_URL}/auth/login` }),
     (req, res) => {
+        // Redirect to homepage
         res.redirect(UI_BASE_URL);
     }
 );
@@ -24,12 +25,7 @@ router.get('/me', (req, res) => {
     const user = req.user as User
     res.status(200).json({
         authenticated: true,
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            picture: user.picture
-        }
+        user: user
     });
 });
 

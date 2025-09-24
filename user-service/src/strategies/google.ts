@@ -1,15 +1,21 @@
+import { User } from "@shared/models/user";
 import passport from "passport";
 import { Strategy, Profile, VerifyCallback } from "passport-google-oauth20";
+import { PrismaClient } from "@prisma/client";
 
-const users = new Map<string, any>();
+const prisma = new PrismaClient();
 
 passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+    done(null, user.google_id);
 });
 
-passport.deserializeUser((id: string, done) => {
-    const user = users.get(id);
-    done(null, user || null);
+passport.deserializeUser(async (id: string, done) => {
+    try {
+        const user = await prisma.user.findUnique({ where: { google_id: id } });
+        done(null, user || null);
+    } catch (err) {
+        done(err, null);
+    }
 });
 
 passport.use(new Strategy({
@@ -18,32 +24,30 @@ passport.use(new Strategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     scope: ['profile', 'email']
 }, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
+    // NOTE: can use access and refresh tokens if we need to make Google API calls on behalf of user
     try {
-        let user = users.get(profile.id);
+        let user = await prisma.user.findUnique({ where: { google_id: profile._json.sub } });
 
         if (!user) {
-            // Create new user
-            user = {
-                id: profile.id,
-                email: profile.emails?.[0]?.value,
-                name: profile.displayName,
-                picture: profile.photos?.[0]?.value,
-                accessToken,
-                refreshToken,
-                createdAt: new Date(),
-                lastLogin: new Date()
-            };
-
-            users.set(profile.id, user);
-            console.log(`New user created: ${user.name} (${user.email})`);
+            user = await prisma.user.create({
+                data: {
+                    google_id: profile._json.sub,
+                    displayName: profile._json.name,
+                    firstName: profile._json.given_name,
+                    lastName: profile._json.family_name,
+                    picture: profile._json.picture,
+                    email: profile._json.email,
+                    lastLogin: new Date()
+                }
+            });
+            console.log(`New user created: ${user.displayName} (${user.email})`);
         } else {
-            // Update last login
-            user.lastLogin = new Date();
-            user.accessToken = accessToken;
-            user.refreshToken = refreshToken;
-            console.log(`User logged in: ${user.name} (${user.email})`);
+            user = await prisma.user.update({
+                where: { google_id: profile._json.sub },
+                data: { lastLogin: new Date() }
+            });
+            console.log(`User logged in: ${user.displayName} (${user.email})`);
         }
-
         return done(null, user);
     } catch (error) {
         return done(error, undefined);
