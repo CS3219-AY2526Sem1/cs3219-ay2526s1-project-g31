@@ -3,8 +3,15 @@
 ## Group: G31
 
 ## Set up
-1. Copy `.env.example` to `.env` and modify the environment variables as needed.
-2. Run `docker-compose -f docker-compose.dev.yml up --build` to start all services in development mode.
+Copy `.env.example` to `.env` and modify the environment variables as needed.
+
+Run the following commands to set up the development environment:
+```
+docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml build --no-cache
+docker compose -f ./redis/docker-compose.yml up
+docker compose -f docker-compose.dev.yml up
+```
 
 ## Development
 - For testing individual microservices, navigate to the respective microservice folder and follow the instructions in the `README.md` file of that microservice.
