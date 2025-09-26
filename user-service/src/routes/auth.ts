@@ -1,8 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import { User } from '@shared/models/user';
-import { UI_BASE_URL } from "../../../shared/constants/common";
-
+import { User, UI_BASE_URL } from 'shared';
 const router = Router();
 
 // Redirect to google for authentication
