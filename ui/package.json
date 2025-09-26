@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "cd ../shared && yarn build && cd ../ui && next dev --turbopack",
+    "build": "cd ../shared && yarn build && cd ../ui && next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },

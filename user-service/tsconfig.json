@@ -2,7 +2,7 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": "..",
+    "rootDir": "./src",
     "outDir": "./dist",
 
     // Environment Settings
@@ -11,9 +11,6 @@
     "target": "es2016",
     "esModuleInterop": true,
     "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["../shared/*"]
-    },
     // "types": [],
     // For nodejs:
     // "lib": ["esnext"],

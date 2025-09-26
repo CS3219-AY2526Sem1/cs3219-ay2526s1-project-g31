@@ -1,5 +1,5 @@
 import express from "express";
-import { UI_BASE_URL } from "../../../shared/constants/common";
+import { UI_BASE_URL } from 'shared';
 
 const corsMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.header('Access-Control-Allow-Origin', UI_BASE_URL);

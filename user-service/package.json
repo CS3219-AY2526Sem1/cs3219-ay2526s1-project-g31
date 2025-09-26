@@ -4,8 +4,8 @@
   "main": "./src/index.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "npx prisma generate && nodemon",
-    "build": "npx prisma generate && tsc",
+    "dev": "cd ../shared && yarn build && cd ../user-service && npx prisma generate && nodemon",
+    "build": "cd ../shared && yarn build && cd ../user-service && npx prisma generate && tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -17,7 +17,8 @@
     "express-session": "^1.18.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "redis": "^5.8.2"
+    "redis": "^5.8.2",
+    "shared": "file:../shared"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

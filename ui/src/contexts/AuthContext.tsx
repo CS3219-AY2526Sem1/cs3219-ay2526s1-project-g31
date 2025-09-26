@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '../../../shared/models/user';
+import { User } from '../../../shared/src/models/user';
 
 interface AuthContextType {
     user: User | null;
