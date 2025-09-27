@@ -3,5 +3,6 @@ Responsible for user profile management
 
 ### Set up
 1. `npm install -g yarn`
-2. `yarn install`
-3. `yarn run dev` to start the development server.
+2. `yarn shared`
+3. `yarn install`
+4. `yarn dev`
