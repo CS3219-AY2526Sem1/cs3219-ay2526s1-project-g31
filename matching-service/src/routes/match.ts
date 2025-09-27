@@ -1,31 +1,30 @@
-import express, { Request, Response } from "express";
-import { enqueueUser, getQueueLength } from "../config/redis";
-import { startMatchingLoop } from "../services/matcher";
+import express from "express";
+import { connectToMatchingService, stopMatching } from "../config/wsClient";
+import { enqueueAndStart } from "../services/matcher";
 
 const router = express.Router();
 
-router.post("/enqueue", async (req: Request, res: Response) => {
+router.post("/start", async (req, res) => {
     const { userId, difficulty } = req.body;
 
     if (!userId || !difficulty) {
-        return res.status(400).json({ error: "Missing userId or difficulty" });
+        return res.status(400).send({ error: "userId and difficulty are required" });
     }
 
-    await enqueueUser(userId, difficulty);
+    try {
+        await enqueueAndStart(userId, difficulty);
+        connectToMatchingService(userId);
 
-    // Start matching loop for this difficulty
-    startMatchingLoop(difficulty, (users, diff) => {
-        console.log(`Matched users: ${users.join(", ")} with difficulty: ${diff}`);
-    });
+        return res.status(200).send({ message: "Matching started", userId, difficulty });
+    } catch (err) {
+        console.error("[MATCH ROUTE] Error starting matching:", err);
+        return res.status(500).send({ error: "Failed to start matching" });
+    }
+});
 
-    const queueLength = await getQueueLength(difficulty);
-
-    return res.json({
-        matched: queueLength >= 2,
-        queueLength,
-        message: "User queued",
-        difficulty
-    });
+router.post("/stop", (req, res) => {
+    stopMatching();
+    return res.status(200).send({ message: "Matching stopped" });
 });
 
 export default router;

@@ -1,10 +1,17 @@
 import Redis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redis = new Redis({
+    host: process.env.REDIS_HOST || "127.0.0.1",
+    port: parseInt(process.env.REDIS_PORT || "6379"),
+});
+
+const MATCH_TTL = 120; // i.e. 2 minutes
 
 /** Enqueues user by difficulty */
 export const enqueueUser = async (userId: string, difficulty: string) => {
-    await redis.rpush(`queue:${difficulty}`, userId);
+    const queueKey = `queue:${difficulty}`;
+    await redis.rpush(queueKey, userId);
+    await redis.expire(queueKey, MATCH_TTL);
 };
 
 /** Dequeues a user by difficulty */
@@ -19,8 +26,8 @@ export const getQueueLength = async (difficulty: string) => {
 
 /** Stores matched pair temporarily */
 export const setMatch = async (userA: string, userB: string) => {
-    await redis.set(`match:${userA}`, userB);
-    await redis.set(`match:${userB}`, userA);
+    await redis.set(`match:${userA}`, userB, "EX", MATCH_TTL);
+    await redis.set(`match:${userB}`, userA, "EX", MATCH_TTL);
 };
 
 /** Retrieves a matched partner */

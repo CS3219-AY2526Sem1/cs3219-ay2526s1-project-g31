@@ -1,11 +1,4 @@
-import dotenv from "dotenv";
-import path from "path";
-import app from "./server";
+import "dotenv/config";  // loads .env variables automatically
+import "./server";       // starts server with WebSocket
 
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
-
-const PORT = process.env.MATCHING_SERVICE_PORT;
-
-app.listen(PORT, () => {
-    console.log(`Matching Service is running on port ${PORT}`);
-});
+console.log(`[INDEX] Matching Service started on port ${process.env.MATCHING_SERVICE_PORT || 3001}`);
