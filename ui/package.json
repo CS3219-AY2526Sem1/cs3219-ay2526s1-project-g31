@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "shared": "yarn --cwd ../shared install && yarn --cwd ../shared build && npm install ../shared --force",
+    "shared": "yarn --cwd ../shared install && yarn --cwd ../shared build && yarn add file:../shared --force",
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
