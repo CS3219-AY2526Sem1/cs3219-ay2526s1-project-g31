@@ -15,7 +15,7 @@ export default function Home() {
           {/* Hero Section */}
           <div className="text-center mb-16">
             <h1 className="text-5xl font-bold text-gray-100 mb-4">
-              Welcome back, {user?.firstName || user?.displayName?.split(' ')[0] || 'there'}! 👋
+              {user?.displayName ? `Welcome back, ${user.displayName}! 👋` : "Welcome back! 👋"}
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Ready to ace your next technical interview? Connect with peers, practice coding problems,
