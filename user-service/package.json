@@ -4,8 +4,9 @@
   "main": "./src/index.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "cd ../shared && yarn build && cd ../user-service && npx prisma generate && nodemon",
-    "build": "cd ../shared && yarn build && cd ../user-service && npx prisma generate && tsc",
+    "shared": "yarn --cwd ../shared install && yarn --cwd ../shared build && yarn add file:../shared --force",
+    "dev": "npx prisma generate && nodemon",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {

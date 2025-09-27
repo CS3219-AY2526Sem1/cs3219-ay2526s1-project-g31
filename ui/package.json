@@ -3,16 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cd ../shared && yarn build && cd ../ui && next dev --turbopack",
-    "build": "cd ../shared && yarn build && cd ../ui && next build --turbopack",
+    "shared": "yarn --cwd ../shared install && yarn --cwd ../shared build && yarn add file:../shared --force",
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "next": "^15.5.4",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "next": "15.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "shared": "file:../shared"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

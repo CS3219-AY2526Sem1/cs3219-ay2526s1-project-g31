@@ -3,9 +3,11 @@
 ## Group: G31
 
 ## Set up
+Each microservice has its own `README.md` file with instructions on how to set up and run the microservice individually. Please refer to those files for individual microservice setup.
+
 Copy `.env.example` to `.env` and modify the environment variables as needed.
 
-Run the following commands to set up the development environment:
+Run the following commands to run the dev environment in a docker container:
 ```
 docker compose -f docker-compose.dev.yml down
 docker compose -f docker-compose.dev.yml build --no-cache
