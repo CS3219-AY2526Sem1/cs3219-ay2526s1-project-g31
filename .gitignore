@@ -1,1 +1,3 @@
 .env
+redis_data
+mongo_data
