@@ -1,12 +1,12 @@
 import session from "express-session";
-import redisClient from "./redis";
+import { createRedisClient } from "shared";
 
 const ConnectRedis = require("connect-redis");
 const RedisStore = ConnectRedis.RedisStore;
 
 const sessionConfig = session({
     store: new RedisStore({
-        client: redisClient,
+        client: createRedisClient(process.env.REDIS_HOST!, process.env.REDIS_PORT!, process.env.REDIS_PASSWORD!),
         prefix: "peerprep:sess:"
     }),
     resave: false,

@@ -1296,6 +1296,7 @@ setprototypeof@1.2.0:
     cookie "^1.0.2"
     dotenv "^17.2.2"
     express "^5.1.0"
+    redis "^5.8.2"
 
 side-channel-list@^1.0.0:
   version "1.0.0"
