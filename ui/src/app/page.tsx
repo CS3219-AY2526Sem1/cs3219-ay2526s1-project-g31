@@ -1,11 +1,11 @@
 'use client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
-import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { useUser } from '@/contexts/UserContext';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   return (
     <ProtectedRoute>

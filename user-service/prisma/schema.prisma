@@ -18,4 +18,17 @@ model User {
   lastLogin   DateTime?
   createdAt   DateTime @default(now())
   lastUpdated DateTime @updatedAt
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenId   String   @unique // Unique identifier for the token
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
 }

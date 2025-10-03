@@ -2,33 +2,33 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Spinner from './Spinner';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { accessToken, isLoading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (!accessToken && !isLoading) {
             // Redirect to login page
             router.push('/auth/login');
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [accessToken, isLoading, router]);
 
     // Show loading spinner while checking auth
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-900">
-                <div className="text-lg text-gray-100">Loading...</div>
-            </div>
+        return (<div className="flex items-center justify-center h-screen">
+            <Spinner />
+        </div>
         );
     }
 
     // If not authenticated, don't render children (will redirect)
-    if (!isAuthenticated) {
+    if (!accessToken) {
         return null;
     }
 

@@ -1,52 +1,137 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from 'shared';
+// import { User } from 'shared';
 
 interface AuthContextType {
-    user: User | null;
-    isAuthenticated: boolean;
+    // user: User | null;
+    // isAuthenticated: boolean;
     isLoading: boolean;
-    checkAuth: () => Promise<void>;
+    accessToken: string | null;
+    // login: (token: string) => void;
+    logout: () => void;
+    refreshAccessToken: () => Promise<string | null>;
+    authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    // const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
 
-    const checkAuth = async () => {
+    // Login with access token and fetch user data
+    // const login = async (token: string) => {
+    //     setAccessToken(token);
+
+    //     try {
+    //         const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/me`, {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`,
+    //             },
+    //         });
+
+    //         if (response.ok) {
+    //             const data = await response.json();
+    //             if (data.authenticated && data.user) {
+    //                 setUser(data.user);
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to fetch user data:', error);
+    //     }
+    // };
+
+    // Logout
+    const logout = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/me`, {
-                credentials: 'include', // Include cookies for session
+            await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            setAccessToken(null);
+            // setUser(null);
+        }
+    };
+
+    // Refresh access token using refresh token cookie
+    const refreshAccessToken = async (): Promise<string | null> => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include',
             });
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.authenticated) {
-                    setUser(data.user);
-                    return;
-                }
+                setAccessToken(data.accessToken);
+                return data.accessToken;
             }
-            setUser(null);
+            return null;
         } catch (error) {
-            console.error('Auth check failed:', error);
-            setUser(null);
-        } finally {
-            setIsLoading(false);
+            console.error('Token refresh failed:', error);
+            return null;
         }
     };
 
+    const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(options.headers as Record<string, string> || {}),
+        };
+
+        const fetchWithToken = async (accessToken: string) => {
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            const response = await fetch(url, {
+                ...options,
+                headers,
+            });
+            return response;
+        }
+
+        let response;
+
+        if (accessToken) {
+            response = await fetchWithToken(accessToken);
+            if (response.status === 401) {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    setAccessToken(newToken);
+                    response = await fetchWithToken(newToken);
+                }
+            }
+        } else {
+            response = await fetch(url, options);
+        }
+
+        return response;
+    };
+
     useEffect(() => {
-        checkAuth();
+        const initAuth = async () => {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                setAccessToken(newToken);
+            }
+            setIsLoading(false);
+        };
+
+        initAuth();
     }, []);
 
     return (
         <AuthContext.Provider value={{
-            user,
-            isAuthenticated: !!user,
+            // user,
+            // isAuthenticated: !!user,
             isLoading,
-            checkAuth
+            accessToken,
+            // login,
+            logout,
+            refreshAccessToken,
+            authFetch
         }}>
             {children}
         </AuthContext.Provider>

@@ -4,16 +4,22 @@ import express from "express";
 import type { Request, Response } from "express";
 import passport from "passport";
 import "./strategies/google";
-import sessionConfig from "./config/session";
+import cookieParser from "cookie-parser";
 import corsMiddleware from "./middleware/cors";
+import cors from "cors";
+import { UI_BASE_URL } from "shared";
 
 const app = express();
 
 app.use(express.json());
-app.use(sessionConfig);
-app.use(corsMiddleware);
+app.use(cookieParser()); // Add cookie parser for refresh tokens
+// app.use(corsMiddleware);
+app.use(cors({
+    origin: UI_BASE_URL,
+    credentials: true, // Allow cookies to be sent
+}));
 app.use(passport.initialize());
-app.use(passport.session());
+// Removed passport.session() as we're using JWT now
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes)

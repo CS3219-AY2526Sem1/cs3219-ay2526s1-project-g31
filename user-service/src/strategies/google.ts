@@ -1,8 +1,6 @@
 import passport from "passport";
+import { prisma } from "../db/prisma";
 import { Strategy, Profile, VerifyCallback } from "passport-google-oauth20";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 passport.serializeUser((user: any, done) => {
     done(null, user.google_id);

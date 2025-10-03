@@ -381,6 +381,33 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
+"@redis/bloom@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-5.8.3.tgz#c0f04cba102eeb3a68792a599f7c320915eba366"
+  integrity sha512-1eldTzHvdW3Oi0TReb8m1yiFt8ZwyF6rv1NpZyG5R4TpCwuAdKQetBKoCw7D96tNFgsVVd6eL+NaGZZCqhRg4g==
+
+"@redis/client@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@redis/client/-/client-5.8.3.tgz#186ebdd30ff874eae35b8d0ea3151137c22802be"
+  integrity sha512-MZVUE+l7LmMIYlIjubPosruJ9ltSLGFmJqsXApTqPLyHLjsJUSAbAJb/A3N34fEqean4ddiDkdWzNu4ZKPvRUg==
+  dependencies:
+    cluster-key-slot "1.1.2"
+
+"@redis/json@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@redis/json/-/json-5.8.3.tgz#f4efab4245b9f5c1d4ab80ec6f3c13aecb663c1e"
+  integrity sha512-DRR09fy/u8gynHGJ4gzXYeM7D8nlS6EMv5o+h20ndTJiAc7RGR01fdk2FNjnn1Nz5PjgGGownF+s72bYG4nZKQ==
+
+"@redis/search@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@redis/search/-/search-5.8.3.tgz#eb1159d1f6576244f47d779535515e83561ec1a4"
+  integrity sha512-EMIvEeGRR2I0BJEz4PV88DyCuPmMT1rDtznlsHY3cKSDcc9vj0Q411jUnX0iU2vVowUgWn/cpySKjpXdZ8m+5g==
+
+"@redis/time-series@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-5.8.3.tgz#d20158dceba05fd456f2abc58b05fe16c736d18e"
+  integrity sha512-5Jwy3ilsUYQjzpE7WZ1lEeG1RkqQ5kHtwV1p8yxXHSEmyUbC/T/AVgyjMcm52Olj/Ov/mhDKjx6ndYUi14bXsw==
+
 "@rtsao/scc@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
@@ -1023,6 +1050,11 @@ client-only@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/client-only/-/client-only-0.0.1.tgz#38bba5d403c41ab150bff64a95c85013cf73bca1"
   integrity sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==
+
+cluster-key-slot@1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/cluster-key-slot/-/cluster-key-slot-1.1.2.tgz#88ddaa46906e303b5de30d3153b7d9fe0a0c19ac"
+  integrity sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==
 
 color-convert@^2.0.1:
   version "2.0.1"
@@ -2721,6 +2753,17 @@ react@19.1.0:
   resolved "https://registry.yarnpkg.com/react/-/react-19.1.0.tgz#926864b6c48da7627f004795d6cce50e90793b75"
   integrity sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==
 
+redis@^5.8.2:
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/redis/-/redis-5.8.3.tgz#c65d52ff9099579e278bf8ce100efbadafe5580a"
+  integrity sha512-MfSrfV6+tEfTw8c4W0yFp6XWX8Il4laGU7Bx4kvW4uiYM1AuZ3KGqEGt1LdQHeD1nEyLpIWetZ/SpY3kkbgrYw==
+  dependencies:
+    "@redis/bloom" "5.8.3"
+    "@redis/client" "5.8.3"
+    "@redis/json" "5.8.3"
+    "@redis/search" "5.8.3"
+    "@redis/time-series" "5.8.3"
+
 reflect.getprototypeof@^1.0.6, reflect.getprototypeof@^1.0.9:
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/reflect.getprototypeof/-/reflect.getprototypeof-1.0.10.tgz#c629219e78a3316d8b604c765ef68996964e7bf9"
@@ -2921,6 +2964,7 @@ setprototypeof@1.2.0:
     cookie "^1.0.2"
     dotenv "^17.2.2"
     express "^5.1.0"
+    redis "^5.8.2"
 
 sharp@^0.34.3:
   version "0.34.4"

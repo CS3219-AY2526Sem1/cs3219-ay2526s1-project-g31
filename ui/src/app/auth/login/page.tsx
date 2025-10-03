@@ -5,15 +5,15 @@ import { useEffect } from 'react';
 import Spinner from '@/components/Spinner';
 
 export default function Login() {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { accessToken, isLoading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
+        if (!isLoading && accessToken) {
             // If already logged in, redirect to homepage
             router.push('/');
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [accessToken, isLoading, router]);
 
     const handleGoogleLogin = () => {
         // Redirect to your backend Google auth
@@ -24,7 +24,7 @@ export default function Login() {
         return <Spinner fullScreen={true} message="Loading..." />;
     }
 
-    if (isAuthenticated) {
+    if (accessToken) {
         return null; // Will redirect
     }
 
