@@ -1,105 +1,95 @@
+import jwt from "jsonwebtoken";
+import passport from "passport";
 import { Router } from "express";
-import { prisma } from "../db/prisma";
-import { verifyAccessToken, JwtRequest } from "shared";
+import { User } from 'shared';
+import { generateTokens, RefreshTokenPayload } from '../utils/jwt';
+import { createRefreshToken, deleteRefreshToken, validateRefreshToken } from '../utils/refreshToken';
+import { JWT_REFRESH_EXPIRES_DAYS } from "../utils/jwt";
+import { UI_BASE_URL } from "../constants/common";
 
 const router = Router();
-router.use(verifyAccessToken);
 
-router.get('/me', async (req: JwtRequest, res) => {
-    try {
-        const userId = req.auth?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
+// Redirect to google for authentication
+router.get('/google', passport.authenticate('google'));
+
+// Handle callback from google
+router.get('/google/callback', async (req, res) => {
+    // Use passport authenticate without session
+    passport.authenticate('google', { session: false }, async (err, user: User) => {
+        if (err) {
+            console.error('OAuth error:', err);
+            return res.redirect(`${UI_BASE_URL}/auth/login`);
         }
-        const user = await prisma.user.findUnique({
-            where: { id: userId }
-        });
 
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            console.error('No user returned from OAuth');
+            return res.redirect(`${UI_BASE_URL}/auth/login`);
         }
 
-        res.json(user);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to get user" });
-    }
+        try {
+            // Create new refresh token in db
+            const tokenId = await createRefreshToken(user.id);
+            const { refreshToken } = generateTokens(user.id, tokenId);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+                maxAge: JWT_REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000 // days in milliseconds
+            });
+
+            res.redirect(UI_BASE_URL);
+        } catch (error) {
+            console.error('OAuth callback error:', error);
+            res.redirect(`${UI_BASE_URL}/auth/login`);
+        }
+    })(req, res);
 });
 
-router.put('/me', async (req: JwtRequest, res) => {
+router.post('/refresh', async (req, res) => {
     try {
-        const userId = req.auth?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token not provided' });
         }
-        const { displayName } = req.body; // Can extend to other fields as needed
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { displayName }
+
+        const { tokenId } = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as RefreshTokenPayload;
+        const userId = await validateRefreshToken(tokenId);
+        if (!userId) {
+            return res.status(401).json({ error: 'Invalid or expired refresh token.' });
+        }
+
+        const { accessToken } = generateTokens(userId, tokenId);
+
+        res.json({
+            accessToken
         });
-        res.json(user);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to update user" });
+    } catch (error) {
+        console.error('Token refresh error:', error);
+        res.status(401).json({ error: 'Token refresh error' });
     }
 });
 
-router.delete('/me', async (req: JwtRequest, res) => {
+router.post('/logout', async (req, res) => {
     try {
-        const userId = req.auth?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(400).json({ error: 'No refresh token.' });
         }
-        // Delete all refresh tokens for the user
-        await prisma.refreshToken.deleteMany({
-            where: { userId },
+
+        const { tokenId } = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as RefreshTokenPayload;
+        await deleteRefreshToken(tokenId);
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax'
         });
 
-        // Delete the user
-        await prisma.user.delete({
-            where: { id: userId },
-        });
-
-        res.json({ message: "User deleted successfully" });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to delete user" });
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ error: 'Could not log out' });
     }
 });
-
-// TODO: add role-based access control (RBAC) middleware: allow admin to access all routes, regular users only their own data
-
-// router.get('/:id', async (req, res) => {
-//     try {
-//         const user = await prisma.user.findUnique({
-//             where: { google_id: req.params.id }
-//         });
-//         if (!user) return res.status(404).json({ error: "User not found" });
-//         res.json(user);
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to get user" });
-//     }
-// });
-
-// router.put('/:id', async (req, res) => {
-//     try {
-//         const { displayName, firstName, lastName, picture, email } = req.body;
-//         const user = await prisma.user.update({
-//             where: { google_id: req.params.id },
-//             data: { displayName, firstName, lastName, picture, email }
-//         });
-//         res.json(user);
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to update user" });
-//     }
-// });
-
-// router.delete('/:id', async (req, res) => {
-//     try {
-//         await prisma.user.delete({
-//             where: { google_id: req.params.id },
-//         });
-//         res.json({ message: "User deleted successfully" });
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to delete user" });
-//     }
-// });
 
 export default router;
