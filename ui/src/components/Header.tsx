@@ -1,28 +1,18 @@
 'use client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function Header() {
-    const { user, isAuthenticated, checkAuth } = useAuth();
+    const { accessToken, logout } = useAuth();
+    const { user } = useUser();
     const router = useRouter();
 
     const handleLogout = async () => {
-        try {
-            await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            // Check auth status to update context
-            await checkAuth();
-
-            // Redirect to login
-            router.push('/auth/login');
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
+        logout();
+        router.push('/auth/login');
     };
 
     return (
@@ -42,7 +32,7 @@ export default function Header() {
                     </div>
 
                     {/* User Section */}
-                    {isAuthenticated && user ? (
+                    {accessToken && user ? (
                         <div className="flex items-center space-x-4">
                             {/* User Avatar and Info */}
                             <Link
@@ -78,7 +68,7 @@ export default function Header() {
                                 </svg>
                             </button>
                         </div>
-                    ) : !isAuthenticated ? (
+                    ) : !accessToken ? (
                         <div className="flex items-center space-x-4">
                             <Link
                                 href="/auth/login"
@@ -90,7 +80,7 @@ export default function Header() {
                     ) : null}
 
                     {/* Mobile menu button */}
-                    {isAuthenticated && (
+                    {accessToken && (
                         <div className="md:hidden">
                             <button className="text-gray-300 hover:text-gray-100">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

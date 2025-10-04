@@ -1,13 +1,15 @@
 'use client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 
 export default function Profile() {
-    const { user, isAuthenticated, isLoading, checkAuth } = useAuth();
     const router = useRouter();
+    const { isLoading, accessToken, logout, authFetch } = useAuth();
+    const { user } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const [editedDisplayName, setEditedDisplayName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -22,13 +24,13 @@ export default function Profile() {
     }, [user]);
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (!isLoading && !accessToken) {
             router.push('/auth/login');
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [accessToken, isLoading, router]);
 
     const handleEditName = async () => {
-        if (!user?.google_id || !editedDisplayName.trim()) {
+        if (!editedDisplayName.trim()) {
             setError('Display name cannot be empty');
             return;
         }
@@ -37,24 +39,23 @@ export default function Profile() {
         setError('');
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/user/${user.google_id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    displayName: editedDisplayName.trim(),
-                }),
-            });
+            const response = await authFetch(
+                `${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/user/me`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        displayName: editedDisplayName.trim(),
+                    }),
+                }
+            );
 
             if (!response.ok) {
                 throw new Error('Failed to update profile');
             }
 
-            // Refresh user data
-            await checkAuth();
+            // Refresh page to get updated user data
             setIsEditing(false);
+            window.location.reload();
         } catch (err) {
             setError('Failed to update profile. Please try again.');
             console.error('Update profile error:', err);
@@ -70,25 +71,19 @@ export default function Profile() {
         setError('');
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/user/${user.google_id}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
+            const response = await authFetch(
+                `${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/user/me`,
+                {
+                    method: 'DELETE',
+                }
+            );
 
             if (!response.ok) {
                 throw new Error('Failed to delete profile');
             }
 
-            // Logout and redirect to login
-            await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            // Force auth context refresh to clear user state
-            await checkAuth();
-
-            // Redirect to login
+            // Logout and redirect
+            await logout();
             router.push('/auth/login');
         } catch (err) {
             setError('Failed to delete profile. Please try again.');
@@ -111,7 +106,7 @@ export default function Profile() {
         );
     }
 
-    if (!isAuthenticated || !user) {
+    if (!accessToken || !user) {
         return null;
     }
 
