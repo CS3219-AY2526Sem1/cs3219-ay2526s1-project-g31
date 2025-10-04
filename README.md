@@ -5,6 +5,10 @@
 ## Set up
 Each microservice has its own `README.md` file with instructions on how to set up and run the microservice individually. Please refer to those files for individual microservice setup.
 
+1. `npm install -g yarn`
+2. run `yarn install` in shared folder first before setting up the rest of the microservices.
+
+## Running with Docker
 Copy `.env.example` to `.env` and modify the environment variables as needed.
 
 Run the following commands to run the dev environment in a docker container:
