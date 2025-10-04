@@ -1,28 +1,40 @@
-import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import { authenticateUser } from 'shared';
+import { prisma } from "../db/prisma";
+import { verifyAccessToken, JwtRequest } from "shared";
 
-const prisma = new PrismaClient();
 const router = Router();
+router.use(verifyAccessToken);
 
-router.get('/:id', authenticateUser, async (req, res) => {
+router.get('/me', async (req: JwtRequest, res) => {
     try {
+        const userId = req.auth?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         const user = await prisma.user.findUnique({
-            where: { google_id: req.params.id }
+            where: { id: userId }
         });
-        if (!user) return res.status(404).json({ error: "User not found" });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: "Failed to get user" });
     }
 });
 
-router.put('/:id', authenticateUser, async (req, res) => {
+router.put('/me', async (req: JwtRequest, res) => {
     try {
-        const { displayName, firstName, lastName, picture, email } = req.body;
+        const userId = req.auth?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        const { displayName } = req.body; // Can extend to other fields as needed
         const user = await prisma.user.update({
-            where: { google_id: req.params.id },
-            data: { displayName, firstName, lastName, picture, email }
+            where: { id: userId },
+            data: { displayName }
         });
         res.json(user);
     } catch (err) {
@@ -30,15 +42,64 @@ router.put('/:id', authenticateUser, async (req, res) => {
     }
 });
 
-router.delete('/:id', authenticateUser, async (req, res) => {
+router.delete('/me', async (req: JwtRequest, res) => {
     try {
-        await prisma.user.delete({
-            where: { google_id: req.params.id },
+        const userId = req.auth?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        // Delete all refresh tokens for the user
+        await prisma.refreshToken.deleteMany({
+            where: { userId },
         });
+
+        // Delete the user
+        await prisma.user.delete({
+            where: { id: userId },
+        });
+
         res.json({ message: "User deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: "Failed to delete user" });
     }
 });
+
+// TODO: add role-based access control (RBAC) middleware: allow admin to access all routes, regular users only their own data
+
+// router.get('/:id', async (req, res) => {
+//     try {
+//         const user = await prisma.user.findUnique({
+//             where: { google_id: req.params.id }
+//         });
+//         if (!user) return res.status(404).json({ error: "User not found" });
+//         res.json(user);
+//     } catch (err) {
+//         res.status(500).json({ error: "Failed to get user" });
+//     }
+// });
+
+// router.put('/:id', async (req, res) => {
+//     try {
+//         const { displayName, firstName, lastName, picture, email } = req.body;
+//         const user = await prisma.user.update({
+//             where: { google_id: req.params.id },
+//             data: { displayName, firstName, lastName, picture, email }
+//         });
+//         res.json(user);
+//     } catch (err) {
+//         res.status(500).json({ error: "Failed to update user" });
+//     }
+// });
+
+// router.delete('/:id', async (req, res) => {
+//     try {
+//         await prisma.user.delete({
+//             where: { google_id: req.params.id },
+//         });
+//         res.json({ message: "User deleted successfully" });
+//     } catch (err) {
+//         res.status(500).json({ error: "Failed to delete user" });
+//     }
+// });
 
 export default router;
