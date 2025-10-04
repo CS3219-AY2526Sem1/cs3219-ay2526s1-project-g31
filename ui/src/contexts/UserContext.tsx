@@ -17,6 +17,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUser = useCallback(async () => {
+        if (isAuthLoading) {
+            return;
+        }
+
         if (!accessToken) {
             setUser(null);
             setIsLoading(false);
@@ -38,24 +42,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [authFetch, accessToken]);
+    }, [isAuthLoading, accessToken, authFetch]);
 
     useEffect(() => {
-        console.log("Auth loading:", isAuthLoading, "Access token:", accessToken);
-        // Wait for auth to finish loading
-        if (isAuthLoading) {
-            return;
-        }
-
-        // Only fetch if we have an access token
-        if (!accessToken) {
-            setUser(null);
-            setIsLoading(false);
-            return;
-        }
-
         fetchUser();
-    }, [accessToken, isAuthLoading, fetchUser]);
+    }, [fetchUser]);
     return (
         <UserContext.Provider value={{ user, isLoading, fetchUser }}>
             {children}

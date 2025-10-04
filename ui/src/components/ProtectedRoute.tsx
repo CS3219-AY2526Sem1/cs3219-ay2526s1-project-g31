@@ -19,7 +19,6 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         }
     }, [accessToken, isLoading, router]);
 
-    // Show loading spinner while checking auth
     if (isLoading) {
         return (<div className="flex items-center justify-center h-screen">
             <Spinner />

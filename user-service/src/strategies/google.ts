@@ -21,7 +21,8 @@ passport.use(new Strategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     scope: ['profile', 'email']
 }, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
-    // NOTE: can use access and refresh tokens if we need to make Google API calls on behalf of user
+    // NOTE: the access and refresh tokens are for making Google API calls on behalf of user
+    // these are different from our own JWT tokens
     try {
         let user = await prisma.user.findUnique({ where: { google_id: profile._json.sub } });
 

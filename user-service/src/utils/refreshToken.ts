@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma';
 import { randomUUID } from 'crypto';
+import { JWT_REFRESH_EXPIRES_DAYS } from './jwt';
 
 /**
  * Create a new refresh token record in the database
@@ -7,7 +8,7 @@ import { randomUUID } from 'crypto';
 export async function createRefreshToken(userId: string): Promise<string> {
     const tokenId = randomUUID(); // refresh token
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    expiresAt.setDate(expiresAt.getDate() + JWT_REFRESH_EXPIRES_DAYS);
 
     await prisma.refreshToken.create({
         data: {
@@ -24,10 +25,10 @@ export async function createRefreshToken(userId: string): Promise<string> {
  * Revoke a specific refresh token
  */
 export async function deleteRefreshToken(tokenId: string): Promise<string | null> {
-    const deletedToken = await prisma.refreshToken.delete({
+    const deletedToken = await prisma.refreshToken.deleteMany({
         where: { tokenId }
     });
-    return deletedToken.tokenId || null
+    return deletedToken.count > 0 ? tokenId : null;
 }
 
 /**
@@ -50,42 +51,3 @@ export async function validateRefreshToken(tokenId: string): Promise<string | nu
 
     return token.userId;
 }
-
-// /**
-//  * Revoke all refresh tokens for a user (useful for logout from all devices)
-//  */
-// export async function revokeAllUserRefreshTokens(userId: string): Promise<void> {
-//     await prisma.refreshToken.updateMany({
-//         where: { userId },
-//         data: { isRevoked: true }
-//     });
-// }
-
-// /**
-//  * Clean up expired refresh tokens (should be called periodically)
-//  */
-// export async function cleanupExpiredTokens(): Promise<void> {
-//     await prisma.refreshToken.deleteMany({
-//         where: {
-//             OR: [
-//                 { expiresAt: { lt: new Date() } },
-//                 { isRevoked: true }
-//             ]
-//         }
-//     });
-// }
-
-// /**
-//  * Get all active refresh tokens for a user
-//  */
-// export async function getUserActiveRefreshTokens(userId: string): Promise<number> {
-//     const count = await prisma.refreshToken.count({
-//         where: {
-//             userId,
-//             isRevoked: false,
-//             expiresAt: { gte: new Date() }
-//         }
-//     });
-
-//     return count;
-// }

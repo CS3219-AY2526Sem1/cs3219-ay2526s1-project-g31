@@ -1,18 +1,9 @@
-import { Router, Request } from "express";
+import { Router } from "express";
 import { prisma } from "../db/prisma";
-import { verifyAccessToken } from "../middleware/jwt";
-
-interface JwtRequest extends Request {
-    auth?: {
-        userId: string;
-        iat: number;
-        exp: number;
-    };
-}
+import { verifyAccessToken, JwtRequest } from "shared";
 
 const router = Router();
 router.use(verifyAccessToken);
-// TODO: add role-based access control (RBAC) middleware: allow admin to access all routes, regular users only their own data
 
 router.get('/me', async (req: JwtRequest, res) => {
     try {
@@ -57,14 +48,23 @@ router.delete('/me', async (req: JwtRequest, res) => {
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
         }
+        // Delete all refresh tokens for the user
+        await prisma.refreshToken.deleteMany({
+            where: { userId },
+        });
+
+        // Delete the user
         await prisma.user.delete({
             where: { id: userId },
         });
+
         res.json({ message: "User deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: "Failed to delete user" });
     }
 });
+
+// TODO: add role-based access control (RBAC) middleware: allow admin to access all routes, regular users only their own data
 
 // router.get('/:id', async (req, res) => {
 //     try {

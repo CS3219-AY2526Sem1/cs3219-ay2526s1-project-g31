@@ -1,10 +1,12 @@
 import * as jwt from 'jsonwebtoken';
 
 // Get JWT secrets with fallbacks for development
+export const JWT_REFRESH_EXPIRES_DAYS = 7;
+
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 const JWT_ACCESS_EXPIRES_IN = '15m';
-const JWT_REFRESH_EXPIRES_IN = '7d';
+const JWT_REFRESH_EXPIRES_IN = `${JWT_REFRESH_EXPIRES_DAYS}d`;
 
 // JWT payload interface
 export interface JWTPayload {
@@ -41,14 +43,3 @@ export function generateTokens(userId: string, tokenId: string) {
         refreshToken
     };
 }
-
-/**
- * Manual verification for refresh tokens (useful for non-middleware contexts)
- */
-// export function verifyRefreshTokenManual(token: string): RefreshTokenPayload {
-//     try {
-//         return jwt.verify(token, JWT_REFRESH_SECRET) as RefreshTokenPayload;
-//     } catch (error) {
-//         throw new Error('Invalid refresh token');
-//     }
-// }

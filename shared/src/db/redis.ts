@@ -1,7 +1,19 @@
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 
-const createRedisClient = (host: string, port: string, password: string) => {
-    const client = createClient({
+let redisClient: RedisClientType | null = null;
+
+/**
+ * Get a Redis client instance.
+ * @param host Redis server host
+ * @param port Redis server port
+ * @param password Redis server password
+ * @returns Redis client instance
+ */
+export function getRedisClient(host: string, port: string, password: string) {
+    if (redisClient) {
+        return redisClient;
+    }
+    redisClient = createClient({
         socket: {
             host,
             port: parseInt(port),
@@ -9,16 +21,14 @@ const createRedisClient = (host: string, port: string, password: string) => {
         password,
     });
 
-    client.on('error', (err: Error) => {
+    redisClient.on('error', (err: Error) => {
         console.error('Redis Client Error:', err);
     });
 
-    client.on('connect', () => {
+    redisClient.on('connect', () => {
         console.log('Connected to Redis');
     });
 
-    client.connect().catch(console.error);
-    return client;
-}
-
-export { createRedisClient };
+    redisClient.connect().catch(console.error);
+    return redisClient;
+};
