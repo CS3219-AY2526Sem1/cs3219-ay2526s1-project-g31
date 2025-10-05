@@ -1,11 +1,12 @@
 import jwt from "jsonwebtoken";
 import passport from "passport";
 import { Router } from "express";
-import { User } from 'shared';
-import { generateTokens, RefreshTokenPayload } from '../utils/jwt';
+import { User } from "@prisma/client";
+import { generateAccessToken, generateRefreshToken, RefreshTokenPayload } from '../utils/jwt';
 import { createRefreshToken, deleteRefreshToken, validateRefreshToken } from '../utils/refreshToken';
 import { JWT_REFRESH_EXPIRES_DAYS } from "../utils/jwt";
 import { UI_BASE_URL } from "../constants/common";
+import { prisma } from "../db/prisma";
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.get('/google/callback', async (req, res) => {
         try {
             // Create new refresh token in db
             const tokenId = await createRefreshToken(user.id);
-            const { refreshToken } = generateTokens(user.id, tokenId);
+            const refreshToken = generateRefreshToken(user.id, tokenId);
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: true,
@@ -58,7 +59,12 @@ router.post('/refresh', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or expired refresh token.' });
         }
 
-        const { accessToken } = generateTokens(userId, tokenId);
+        const userRole = (await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        }))?.role!;
+
+        const accessToken = generateAccessToken(userId, userRole);
 
         res.json({
             accessToken

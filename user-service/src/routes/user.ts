@@ -1,11 +1,15 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma";
-import { verifyAccessToken, JwtRequest } from "shared";
+import { UserRole } from "@prisma/client";
+import { verifyAccessToken, authorizedRoles, JwtRequest } from "shared";
+
+const authorizeUser = authorizedRoles([UserRole.USER, UserRole.ADMIN]);
+const authorizeAdmin = authorizedRoles([UserRole.ADMIN]);
 
 const router = Router();
 router.use(verifyAccessToken);
 
-router.get('/me', async (req: JwtRequest, res) => {
+router.get('/me', authorizeUser, async (req: JwtRequest, res) => {
     try {
         const userId = req.auth?.userId;
         if (!userId) {
@@ -25,7 +29,7 @@ router.get('/me', async (req: JwtRequest, res) => {
     }
 });
 
-router.put('/me', async (req: JwtRequest, res) => {
+router.put('/me', authorizeUser, async (req: JwtRequest, res) => {
     try {
         const userId = req.auth?.userId;
         if (!userId) {
@@ -42,7 +46,7 @@ router.put('/me', async (req: JwtRequest, res) => {
     }
 });
 
-router.delete('/me', async (req: JwtRequest, res) => {
+router.delete('/me', authorizeUser, async (req: JwtRequest, res) => {
     try {
         const userId = req.auth?.userId;
         if (!userId) {
@@ -64,42 +68,40 @@ router.delete('/me', async (req: JwtRequest, res) => {
     }
 });
 
-// TODO: add role-based access control (RBAC) middleware: allow admin to access all routes, regular users only their own data
+router.get('/:id', authorizeAdmin, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { google_id: req.params.id }
+        });
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to get user" });
+    }
+});
 
-// router.get('/:id', async (req, res) => {
-//     try {
-//         const user = await prisma.user.findUnique({
-//             where: { google_id: req.params.id }
-//         });
-//         if (!user) return res.status(404).json({ error: "User not found" });
-//         res.json(user);
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to get user" });
-//     }
-// });
+router.put('/:id', authorizeAdmin, async (req, res) => {
+    try {
+        const { displayName, firstName, lastName, picture, email } = req.body;
+        const user = await prisma.user.update({
+            where: { google_id: req.params.id },
+            data: { displayName, firstName, lastName, picture, email }
+        });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update user" });
+    }
+});
 
-// router.put('/:id', async (req, res) => {
-//     try {
-//         const { displayName, firstName, lastName, picture, email } = req.body;
-//         const user = await prisma.user.update({
-//             where: { google_id: req.params.id },
-//             data: { displayName, firstName, lastName, picture, email }
-//         });
-//         res.json(user);
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to update user" });
-//     }
-// });
-
-// router.delete('/:id', async (req, res) => {
-//     try {
-//         await prisma.user.delete({
-//             where: { google_id: req.params.id },
-//         });
-//         res.json({ message: "User deleted successfully" });
-//     } catch (err) {
-//         res.status(500).json({ error: "Failed to delete user" });
-//     }
-// });
+router.delete('/:id', authorizeAdmin, async (req, res) => {
+    try {
+        await prisma.user.delete({
+            where: { google_id: req.params.id },
+        });
+        res.json({ message: "User deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to delete user" });
+    }
+});
 
 export default router;

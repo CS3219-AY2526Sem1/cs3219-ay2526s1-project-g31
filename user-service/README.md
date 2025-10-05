@@ -1,5 +1,5 @@
 ### User Service
-Responsible for user profile management
+Responsible for user profile management, authentication and authorisation.
 
 ### Set up
 Copy `.env.example` to `.env` and fill in the required environment variables if empty.
