@@ -14,8 +14,8 @@ export const searchUsersQuerySchema = z.object({
 
 export const adminUpdateUserSchema = z.object({
     displayName: z.string().min(1).max(50).optional(),
-    firstName: z.string().min(1).max(50).optional(),
-    lastName: z.string().min(1).max(50).optional(),
+    firstName: z.string().min(0).max(50).optional(),
+    lastName: z.string().min(0).max(50).optional(),
     picture: z.url().optional(),
     email: z.email().optional(),
     role: z.enum([UserRole.USER, UserRole.ADMIN]).optional(),
