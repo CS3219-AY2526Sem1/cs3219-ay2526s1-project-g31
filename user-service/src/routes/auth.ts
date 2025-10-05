@@ -59,12 +59,12 @@ router.post('/refresh', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or expired refresh token.' });
         }
 
-        const userRole = (await prisma.user.findUnique({
+        const { role } = await prisma.user.findUniqueOrThrow({
             where: { id: userId },
             select: { role: true }
-        }))?.role!;
+        });
 
-        const accessToken = generateAccessToken(userId, userRole);
+        const accessToken = generateAccessToken(userId, role);
 
         res.json({
             accessToken

@@ -68,24 +68,52 @@ router.delete('/me', authorizeUser, async (req: JwtRequest, res) => {
     }
 });
 
-router.get('/:id', authorizeAdmin, async (req, res) => {
+router.get('/search', authorizeAdmin, async (req, res) => {
     try {
-        const user = await prisma.user.findUnique({
-            where: { google_id: req.params.id }
+        const q = (req.query.q as string || '').trim();
+        const take = 20; // Limit results to 20 users
+
+        if (!q) {
+            return res.status(400).json({ error: "Query parameter 'q' is required" });
+        }
+
+        const users = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { google_id: { contains: q, mode: 'insensitive' } },
+                    { displayName: { contains: q, mode: 'insensitive' } },
+                    { firstName: { contains: q, mode: 'insensitive' } },
+                    { lastName: { contains: q, mode: 'insensitive' } },
+                    { email: { contains: q, mode: 'insensitive' } },
+                ]
+            },
+            take
         });
-        if (!user) return res.status(404).json({ error: "User not found" });
-        res.json(user);
+
+        res.json(users);
     } catch (err) {
-        res.status(500).json({ error: "Failed to get user" });
+        console.error('Search users error:', err);
+        res.status(500).json({ error: "Failed to search users" });
     }
 });
 
 router.put('/:id', authorizeAdmin, async (req, res) => {
     try {
-        const { displayName, firstName, lastName, picture, email } = req.body;
+        const { displayName, firstName, lastName, picture, email, role } = req.body as {
+            displayName?: string; firstName?: string; lastName?: string; picture?: string; email?: string; role?: UserRole;
+        };
+
+        // Validate role exists if provided
+        if (role && !Object.values(UserRole).includes(role)) {
+            return res.status(400).json({ error: "Invalid role" });
+        }
+
+        const data: any = { displayName, firstName, lastName, picture, email };
+        if (role) data.role = role; // Don't set role if not provided
+
         const user = await prisma.user.update({
             where: { google_id: req.params.id },
-            data: { displayName, firstName, lastName, picture, email }
+            data
         });
         res.json(user);
     } catch (err) {
@@ -95,11 +123,21 @@ router.put('/:id', authorizeAdmin, async (req, res) => {
 
 router.delete('/:id', authorizeAdmin, async (req, res) => {
     try {
+        await prisma.refreshToken.deleteMany({
+            where: {
+                user: {
+                    google_id: req.params.id,
+                },
+            },
+        });
+
         await prisma.user.delete({
             where: { google_id: req.params.id },
         });
+        console.log("Success");
         res.json({ message: "User deleted successfully" });
     } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Failed to delete user" });
     }
 });
