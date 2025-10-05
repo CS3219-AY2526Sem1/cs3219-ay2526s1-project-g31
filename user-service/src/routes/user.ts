@@ -2,6 +2,8 @@ import { Router } from "express";
 import { prisma } from "../db/prisma";
 import { UserRole } from "@prisma/client";
 import { verifyAccessToken, authorizedRoles, JwtRequest } from "shared";
+import { validate } from "../middleware/validate";
+import { adminUpdateUserSchema, idParamSchema, searchUsersQuerySchema, updateMeSchema } from "../validators/user";
 
 const authorizeUser = authorizedRoles([UserRole.USER, UserRole.ADMIN]);
 const authorizeAdmin = authorizedRoles([UserRole.ADMIN]);
@@ -29,16 +31,16 @@ router.get('/me', authorizeUser, async (req: JwtRequest, res) => {
     }
 });
 
-router.put('/me', authorizeUser, async (req: JwtRequest, res) => {
+router.put('/me', authorizeUser, validate({ body: updateMeSchema }), async (req: JwtRequest, res) => {
     try {
         const userId = req.auth?.userId;
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const { displayName } = req.body; // Can extend to other fields as needed
+        const { displayName, picture } = (req as any).validatedBody as { displayName?: string; picture?: string };
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { displayName }
+            data: { displayName, picture }
         });
         res.json(user);
     } catch (err) {
@@ -68,14 +70,10 @@ router.delete('/me', authorizeUser, async (req: JwtRequest, res) => {
     }
 });
 
-router.get('/search', authorizeAdmin, async (req, res) => {
+router.get('/search', authorizeAdmin, validate({ query: searchUsersQuerySchema }), async (req, res) => {
     try {
-        const q = (req.query.q as string || '').trim();
+        const { q } = (req as any).validatedQuery as { q: string };
         const take = 20; // Limit results to 20 users
-
-        if (!q) {
-            return res.status(400).json({ error: "Query parameter 'q' is required" });
-        }
 
         const users = await prisma.user.findMany({
             where: {
@@ -97,22 +95,17 @@ router.get('/search', authorizeAdmin, async (req, res) => {
     }
 });
 
-router.put('/:id', authorizeAdmin, async (req, res) => {
+router.put('/:id', authorizeAdmin, validate({ params: idParamSchema, body: adminUpdateUserSchema }), async (req, res) => {
     try {
-        const { displayName, firstName, lastName, picture, email, role } = req.body as {
+        const { displayName, firstName, lastName, picture, email, role } = (req as any).validatedBody as {
             displayName?: string; firstName?: string; lastName?: string; picture?: string; email?: string; role?: UserRole;
         };
-
-        // Validate role exists if provided
-        if (role && !Object.values(UserRole).includes(role)) {
-            return res.status(400).json({ error: "Invalid role" });
-        }
 
         const data: any = { displayName, firstName, lastName, picture, email };
         if (role) data.role = role; // Don't set role if not provided
 
         const user = await prisma.user.update({
-            where: { google_id: req.params.id },
+            where: { google_id: (req as any).validatedParams.id },
             data
         });
         res.json(user);
@@ -134,10 +127,8 @@ router.delete('/:id', authorizeAdmin, async (req, res) => {
         await prisma.user.delete({
             where: { google_id: req.params.id },
         });
-        console.log("Success");
         res.json({ message: "User deleted successfully" });
     } catch (err) {
-        console.log(err);
         res.status(500).json({ error: "Failed to delete user" });
     }
 });
