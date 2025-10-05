@@ -12,6 +12,8 @@ export default function Profile() {
     const { user } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const [editedDisplayName, setEditedDisplayName] = useState('');
+    const [isEditingPicture, setIsEditingPicture] = useState(false);
+    const [editedPicture, setEditedPicture] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -20,6 +22,9 @@ export default function Profile() {
     useEffect(() => {
         if (user?.displayName) {
             setEditedDisplayName(user.displayName);
+        }
+        if (user?.picture) {
+            setEditedPicture(user.picture);
         }
     }, [user]);
 
@@ -92,9 +97,50 @@ export default function Profile() {
         }
     };
 
+    const handleEditPicture = async () => {
+        if (!editedPicture.trim()) {
+            setError('Profile picture URL cannot be empty');
+            return;
+        }
+
+        setIsSaving(true);
+        setError('');
+
+        try {
+            const response = await authFetch(
+                `${process.env.NEXT_PUBLIC_USER_SERVICE_BASE_URL}/api/user/me`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        picture: editedPicture.trim(),
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to update profile picture');
+            }
+
+            // Refresh page to get updated user data
+            setIsEditingPicture(false);
+            window.location.reload();
+        } catch (err) {
+            setError('Failed to update profile picture. Please try again.');
+            console.error('Update profile picture error:', err);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const cancelEdit = () => {
         setEditedDisplayName(user?.displayName || '');
         setIsEditing(false);
+        setError('');
+    };
+
+    const cancelEditPicture = () => {
+        setEditedPicture(user?.picture || '');
+        setIsEditingPicture(false);
         setError('');
     };
 
@@ -207,13 +253,50 @@ export default function Profile() {
                                     )}
                                 </div>
 
-                                {/* Email (Read-only) */}
+                                {/* Profile Picture URL */}
                                 <div className="border border-gray-600 rounded-lg p-4 mt-4 bg-gray-700">
                                     <label className="block text-sm font-medium text-gray-200 mb-2">
-                                        Email Address
+                                        Profile Picture URL
                                     </label>
-                                    <span className="text-gray-200">{user.email || "No email"}</span>
-                                    <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+
+                                    {isEditingPicture ? (
+                                        <div className="flex items-center space-x-3">
+                                            <input
+                                                type="text"
+                                                value={editedPicture}
+                                                onChange={(e) => setEditedPicture(e.target.value)}
+                                                className="text-black bg-gray-100 flex-1 border border-gray-500 rounded-md px-3 py-2 focus:ring-blue-400 focus:border-blue-400"
+                                                placeholder="Enter profile picture URL"
+                                                disabled={isSaving}
+                                            />
+                                            <button
+                                                onClick={handleEditPicture}
+                                                disabled={isSaving || !editedPicture.trim()}
+                                                className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            >
+                                                {isSaving ? 'Saving...' : 'Save'}
+                                            </button>
+                                            <button
+                                                onClick={cancelEditPicture}
+                                                disabled={isSaving}
+                                                className="border border-gray-500 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-200 truncate mr-4">
+                                                {user.picture || "No picture set"}
+                                            </span>
+                                            <button
+                                                onClick={() => setIsEditingPicture(true)}
+                                                className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
