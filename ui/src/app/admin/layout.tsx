@@ -1,7 +1,6 @@
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
-import { useRouter } from "next/dist/client/components/navigation";
 import { useEffect, useMemo } from "react";
 
 export default function AdminLayout({
@@ -9,18 +8,17 @@ export default function AdminLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const { accessToken, isLoading: authLoading } = useAuth();
+    const { isLoading: authLoading, accessToken } = useAuth();
     const { user: me } = useUser();
-    const router = useRouter();
     const isAdmin = useMemo(() => me?.role === 'ADMIN', [me]);
 
-    // Redirect if not admin
     useEffect(() => {
+        // Redirect if not admin
         if (!authLoading && (!accessToken || !isAdmin)) {
-            router.push('/');
+            window.location.href = '/'; // trigger full reload to clear state
         }
 
-    }, [router, authLoading, accessToken, isAdmin]);
+    }, [authLoading, accessToken, isAdmin]);
 
     return (
         <>
