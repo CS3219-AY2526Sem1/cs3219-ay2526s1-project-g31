@@ -1,4 +1,6 @@
 'use client';
+import Spinner from '@/components/Spinner';
+import { useRouter } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
@@ -14,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [accessToken, setAccessToken] = useState<string | null>(null);
+    const router = useRouter();
 
     const logout = useCallback(async () => {
         try {
@@ -86,6 +89,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [accessToken, refreshAccessToken]);
 
     useEffect(() => {
+        if (!accessToken && !isLoading) {
+            // Redirect to login page
+            router.push('/auth/login');
+        }
+    }, [accessToken, isLoading, router]);
+
+    useEffect(() => {
         const initAuth = async () => {
             const newToken = await refreshAccessToken();
             if (newToken) {
@@ -96,6 +106,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         initAuth();
     }, [refreshAccessToken]);
+
+    if (isLoading) {
+        return (<div className="flex items-center justify-center h-screen">
+            <Spinner />
+        </div>
+        );
+    }
 
     return (
         <AuthContext.Provider value={{
