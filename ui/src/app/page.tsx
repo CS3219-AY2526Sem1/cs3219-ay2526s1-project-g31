@@ -1,5 +1,4 @@
 'use client';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
@@ -8,7 +7,7 @@ export default function Home() {
   const { user } = useUser();
 
   return (
-    <ProtectedRoute>
+    <>
       <Header />
       <div className="min-h-screen bg-gray-900 pt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -58,6 +57,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </>
   );
 }

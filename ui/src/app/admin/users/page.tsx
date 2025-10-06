@@ -1,14 +1,12 @@
 'use client';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUser } from '@/contexts/UserContext';
 import { User } from 'shared';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 
 export default function AdminUsersPage() {
-    const { authFetch, isLoading: authLoading, accessToken, refreshAccessToken } = useAuth();
-    const { user: me } = useUser();
+    const { authFetch, refreshAccessToken } = useAuth();
 
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -18,14 +16,6 @@ export default function AdminUsersPage() {
     const [editing, setEditing] = useState<User | null>(null);
     const [busy, setBusy] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    const isAdmin = useMemo(() => me?.role === 'ADMIN', [me]);
-
-    useEffect(() => {
-        if (!authLoading && (!accessToken || !isAdmin)) {
-            window.location.href = '/';
-        }
-    }, [authLoading, accessToken, isAdmin]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
