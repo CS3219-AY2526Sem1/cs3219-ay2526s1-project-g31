@@ -1,4 +1,5 @@
 import * as jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
 
 export const JWT_REFRESH_EXPIRES_DAYS = 7;
 
@@ -9,6 +10,7 @@ const JWT_REFRESH_EXPIRES_IN = `${JWT_REFRESH_EXPIRES_DAYS}d`;
 
 export interface JWTPayload {
     userId: string;
+    userRole?: UserRole;
     iat?: number;
     exp?: number;
 }
@@ -18,25 +20,29 @@ export interface RefreshTokenPayload extends JWTPayload {
 }
 
 /**
- * Generate both access and refresh tokens
+ * Generate an access token
+ * @param userId 
+ * @param userRole 
+ * @returns 
  */
-export function generateTokens(userId: string, tokenId: string) {
-    const accessToken = jwt.sign(
-        { userId } as JWTPayload,
+export function generateAccessToken(userId: string, userRole: UserRole) {
+    return jwt.sign(
+        { userId, userRole } as JWTPayload,
         JWT_ACCESS_SECRET,
-        { expiresIn: JWT_ACCESS_EXPIRES_IN } as any,
-        { algorithm: 'HS256' } as any
+        { expiresIn: JWT_ACCESS_EXPIRES_IN, algorithm: 'HS256' } as any
     );
+}
 
-    const refreshToken = jwt.sign(
+/**
+ * Generate a refresh token
+ * @param userId 
+ * @param tokenId 
+ * @returns 
+ */
+export function generateRefreshToken(userId: string, tokenId: string) {
+    return jwt.sign(
         { userId, tokenId } as RefreshTokenPayload,
         JWT_REFRESH_SECRET,
-        { expiresIn: JWT_REFRESH_EXPIRES_IN } as any,
-        { algorithm: 'HS256' } as any
+        { expiresIn: JWT_REFRESH_EXPIRES_IN, algorithm: 'HS256' } as any
     );
-
-    return {
-        accessToken,
-        refreshToken
-    };
 }
