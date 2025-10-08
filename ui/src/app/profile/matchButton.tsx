@@ -1,25 +1,35 @@
 "use client";
 
+import { useUser } from "@/contexts/UserContext";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function MatchButton() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user } = useUser();
 
   const handleStartMatching = async () => {
     setIsLoading(true);
+
+    if (!user) {
+      console.error("User not logged in");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:3001/api/match/start", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL}/api/match/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "user123",     // TODO: replace with actual logged-in user ID
+          userId: user.id,
           difficulty: "easy",    // TODO: replace with user-selected difficulty
         }),
       });
 
       if (!res.ok) throw new Error("Failed to start matching");
+
       router.push("/matching");
     } catch (err) {
       console.error("Start matching failed:", err);

@@ -1,5 +1,3 @@
-import jwt from "jsonwebtoken";
-import passport from "passport";
 import { Router } from "express";
 import { prisma } from "../db/prisma";
 import { UserRole } from "@prisma/client";
@@ -24,40 +22,20 @@ router.get('/me', authorizeUser, async (req: JwtRequest, res) => {
         });
 
         if (!user) {
-            console.error('No user returned from OAuth');
-            return res.redirect(`${UI_BASE_URL}/auth/login`);
+            return res.status(404).json({ error: "User not found" });
         }
 
-        try {
-            // Create new refresh token in db
-            const tokenId = await createRefreshToken(user.id);
-            const { refreshToken } = generateTokens(user.id, tokenId);
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax',
-                maxAge: JWT_REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000 // days in milliseconds
-            });
-
-            res.redirect(UI_BASE_URL);
-        } catch (error) {
-            console.error('OAuth callback error:', error);
-            res.redirect(`${UI_BASE_URL}/auth/login`);
-        }
-    })(req, res);
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to get user" });
+    }
 });
 
 router.put('/me', authorizeUser, validate({ body: updateMeSchema }), async (req: JwtRequest, res) => {
     try {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) {
-            return res.status(401).json({ error: 'Refresh token not provided' });
-        }
-
-        const { tokenId } = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as RefreshTokenPayload;
-        const userId = await validateRefreshToken(tokenId);
+        const userId = req.auth?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Invalid or expired refresh token.' });
+            return res.status(401).json({ error: "Unauthorized" });
         }
         const { displayName, picture } = (req as any).validatedBody as { displayName?: string; picture?: string };
         const user = await prisma.user.update({
