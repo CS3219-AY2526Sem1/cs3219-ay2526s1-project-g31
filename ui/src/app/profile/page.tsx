@@ -87,9 +87,7 @@ export default function Profile() {
                 throw new Error('Failed to delete profile');
             }
 
-            // Logout and redirect
-            await logout();
-            router.push('/auth/login');
+            logout();
         } catch (err) {
             setError('Failed to delete profile. Please try again.');
             console.error('Delete profile error:', err);
