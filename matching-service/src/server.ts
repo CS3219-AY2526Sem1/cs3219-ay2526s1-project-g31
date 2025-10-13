@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
 import http from "http";
-import { setupFrontendWebSocket } from "./config/frontendWS";
+import { setupFrontendSocket } from "./config/frontendWs.js";
 import matchRouter from "./routes/match";
+import { setupSocketIO } from "./sockets/matchSocket.js";
 
 const app = express();
 app.use(express.json());
@@ -16,7 +17,7 @@ app.use("/api/match", matchRouter);
 app.get("/", (_, res) => res.send("Matching Service is running!"));
 
 const server = http.createServer(app);
-setupFrontendWebSocket(server);
+const io = setupSocketIO(server);
 
 const PORT = process.env.MATCHING_SERVICE_PORT || 3002;
 server.listen(PORT, () => console.log(`[SERVER] Running on port ${PORT}`))

@@ -4,6 +4,8 @@
     // File Layout
     "rootDir": "..",
     "outDir": "./dist",
+    "allowJs": true,       // allow JS files in TS project
+    "resolveJsonModule": true,
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -46,6 +48,6 @@
     // "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include" : ["src/**/*.ts"],
+  "include" : ["src/**/*.ts", "src/config/frontendWs.js"],
   "exclude": ["node_modules"]
 }
