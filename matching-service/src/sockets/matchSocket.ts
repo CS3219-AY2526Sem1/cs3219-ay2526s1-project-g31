@@ -1,60 +1,75 @@
-import WebSocket, { Server as WebSocketServer } from "ws";
+// src/sockets/matchSocket.ts
+import { Server as SocketIOServer, Socket } from "socket.io";
+import { Server as HTTPServer } from "http";
 
-const clients = new Map<string, WebSocket>();
+const clients: Map<string, Socket> = new Map();
+let io: SocketIOServer | null = null;
 
-export const setupWebSocket = (server: any) => {
-    const wss = new WebSocketServer({ server });
 
-    wss.on("connection", (ws: WebSocket) => {
-        console.log("[WS] New WebSocket connection");
+export const setupSocketIO = (server: HTTPServer): SocketIOServer => {
+    io = new SocketIOServer(server, {
+        cors: {
+            origin: "*", // TODO: change to frontend URL in production
+        },
+    });
 
-        ws.on("message", (message) => {
-            try {
-                const data = JSON.parse(message.toString());
+    io.on("connection", (socket: Socket) => {
+        console.log("[Socket.IO] New client connected:", socket.id);
 
-                if (data.type === "register" && typeof data.userId === "string") {
-                    clients.set(data.userId, ws);
-                    console.log(`[WS] Registered WebSocket for user: ${data.userId}`);
-                } else {
-                    console.warn("[WS] Invalid register message:", data);
+        socket.on("register", (data: { userId?: string }) => {
+            if (data && typeof data.userId === "string") {
+                const existingSocket = clients.get(data.userId);
+                if (existingSocket && existingSocket.id !== socket.id) {
+                    existingSocket.disconnect(true);
+                    console.log(`[Socket.IO] Disconnected old socket for user: ${data.userId}`);
                 }
-            } catch (err) {
-                console.error("[WS] Invalid message format:", err);
+
+                clients.set(data.userId, socket);
+                console.log(`[Socket.IO] Registered socket for user: ${data.userId}`);
+                console.log(`[Socket.IO] Socket for user: ${socket.id}`);
+            } else {
+                console.warn("[Socket.IO] Invalid register message:", data);
             }
         });
 
-        ws.on("close", () => {
-            for (const [userId, socket] of clients.entries()) {
-                if (socket === ws) {
+        socket.on("disconnect", () => {
+            for (const [userId, s] of clients.entries()) {
+                if (s.id === socket.id) {
                     clients.delete(userId);
-                    console.log(`[WS] WebSocket disconnected and removed for user: ${userId}`);
+                    console.log(`[Socket.IO] Disconnected and removed user: ${userId}`);
                     break;
                 }
             }
         });
 
-        ws.on("error", (err) => console.error("[WS] WebSocket error:", err));
+        socket.on("error", (err: Error) => {
+            console.error("[Socket.IO] Socket error:", err);
+        });
     });
 
-    return wss;
+    return io;
 };
 
-export const notifyMatch = (userA: string, userB: string) => {
-    [userA, userB].forEach(userId => {
-        const socket = clients.get(userId);
+const notifiedPairs = new Set<string>();
 
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            try {
-                socket.send(JSON.stringify({
-                    type: "match",
-                    partner: userId === userA ? userB : userA
-                }));
-                console.log(`[WS] Sent match notification to ${userId}`);
-            } catch (err) {
-                console.error(`[WS] Failed to send match to ${userId}:`, err);
-            }
-        } else {
-            console.warn(`[WS] No active WebSocket for user: ${userId}`);
+
+export function notifyMatch(userA: string, userB: string): void {
+    if (!io) {
+        console.error("[Socket.IO] notifyMatch called before setupSocketIO");
+        return;
+    }
+
+    const key = [userA, userB].sort().join("_");
+    if (notifiedPairs.has(key)) return;
+    notifiedPairs.add(key);
+
+    const users = [userA, userB];
+    users.forEach((u, idx) => {
+        const partner = users[1 - idx];
+        const socket = clients.get(u);
+        if (socket) {
+            io!.to(socket.id).emit("match", { partner });
+            console.log(`[Socket.IO] Sent match notification to ${u}`);
         }
     });
-};
+}

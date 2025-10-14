@@ -1,93 +1,93 @@
-import WebSocket from "ws";
+// src/config/wsClient.ts
+import { io, Socket } from "socket.io-client";
+import { notifyMatch } from "../sockets/matchSocket";
 
-let ws: WebSocket | null = null;
+let socket: Socket | null = null;
 let userId: string | null = null;
 let reconnectInterval: NodeJS.Timeout | null = null;
-
 const RECONNECT_DELAY = 2000;
 
-export function connectToMatchingService(uid: string) {
-    userId = uid;
-
-    const connect = () => {
-        ws = new WebSocket("ws://localhost:3002");
-
-        ws.on("open", () => {
-            console.log("[WS CLIENT] Connected to matching service");
-            if (userId) {
-                ws!.send(JSON.stringify({ type: "register", userId }));
-            }
-            
-            if (reconnectInterval) {
-                clearInterval(reconnectInterval);
-                reconnectInterval = null;
-            }
-        });
-
-        ws.on("message", (message) => {
-            try {
-                const data = JSON.parse(message.toString());
-                console.log("[WS CLIENT] Received:", data);
-
-                if (data.type === "match") {
-                    broadcastMatch(data.partner);
-                }
-            } catch (err) {
-                console.error("[WS CLIENT] Failed to parse message:", err, message.toString());
-            }
-        });
-
-        ws.on("close", () => {
-            console.log("[WS CLIENT] Connection closed");
-            attemptReconnect();
-        });
-
-        ws.on("error", (err) => {
-            console.error("[WS CLIENT] Connection error:", err);
-            ws?.close();
-        });
-    };
-
-    const attemptReconnect = () => {
-        if (!reconnectInterval) {
-            console.log(`[WS CLIENT] Attempting reconnect in ${RECONNECT_DELAY}ms...`);
-            reconnectInterval = setInterval(() => {
-                console.log("[WS CLIENT] Reconnecting...");
-                connect();
-            }, RECONNECT_DELAY);
-        }
-    };
-
-    connect();
+interface UserData {
+    userId: string;
+    socketId: string;
 }
 
-export function stopMatching() {
-    if (ws && ws.readyState === WebSocket.OPEN && userId) {
-        ws.send(JSON.stringify({ type: "unregister", userId }));
-        ws.close();
+let userData: UserData | null = null;
+
+const frontendClients = new Set<Socket>();
+
+export function registerFrontendClient(clientSocket: Socket): void {
+    frontendClients.add(clientSocket);
+    clientSocket.on("disconnect", () => frontendClients.delete(clientSocket));
+}
+
+export function connectToMatchingService(uid: string): Promise<UserData> {
+    userId = uid;
+
+    return new Promise((resolve, reject) => {
+        const connect = () => {
+            socket = io("http://localhost:3002", {
+                reconnection: false, // handle manually
+            });
+
+            socket.on("connect", () => {
+                console.log("[SOCKET CLIENT] Connected to matching service");
+
+                // Type-safe check: ensure socket.id exists
+                if (!socket?.id) {
+                    reject(new Error("Socket ID is undefined"));
+                    return;
+                }
+
+                // Assign userData after confirming socket.id
+                userData = { userId: uid, socketId: socket.id };
+                socket.emit("register", userData);
+
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+
+                resolve(userData);
+            });
+
+            socket.on("disconnect", () => {
+                console.log("[SOCKET CLIENT] Disconnected");
+                attemptReconnect();
+            });
+
+            socket.on("connect_error", (err: Error) => {
+                console.error("[SOCKET CLIENT] Connection error:", err);
+                socket?.disconnect();
+                reject(err);
+            });
+        };
+
+        const attemptReconnect = () => {
+            if (!reconnectInterval) {
+                console.log(`[SOCKET CLIENT] Attempting reconnect in ${RECONNECT_DELAY}ms...`);
+                reconnectInterval = setInterval(() => {
+                    console.log("[SOCKET CLIENT] Reconnecting...");
+                    connect();
+                }, RECONNECT_DELAY);
+            }
+        };
+
+        connect();
+    });
+}
+
+export function stopMatching(): void {
+    if (socket && userId) {
+        socket.emit("unregister", { userId });
+        socket.disconnect();
     }
-    ws = null;
+
+    socket = null;
     userId = null;
+
     if (reconnectInterval) {
         clearInterval(reconnectInterval);
         reconnectInterval = null;
-    }
-}
-
-const frontendClients = new Set<WebSocket>();
-
-export function registerFrontendClient(client: WebSocket) {
-    frontendClients.add(client);
-
-    client.on("close", () => frontendClients.delete(client));
-}
-
-function broadcastMatch(partner: any) {
-    for (const client of frontendClients) {
-        try {
-            client.send(JSON.stringify({ type: "match", partner }));
-        } catch (err) {
-            console.error("[WS CLIENT] Failed to send match:", err);
-        }
     }
 }
