@@ -2,6 +2,7 @@
 import Header from '@/components/Header';
 import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
+import MatchButton from './profile/matchButton';
 
 export default function Home() {
   const { user } = useUser();
@@ -22,11 +23,12 @@ export default function Home() {
             </p>
 
             {/* Main CTA Button */}
-            <Link href="/matching" className="inline-block">
+            <MatchButton />
+            {/* <Link href="/matching" className="inline-block">
               <button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xl font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer">
                 🤝 Start Matching with Peers
               </button>
-            </Link>
+            </Link> */}
           </div>
 
           {/* Features Grid */}

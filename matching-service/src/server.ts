@@ -1,10 +1,23 @@
 import express from "express";
-import type { Request, Response } from "express";
+import cors from "cors";
+import http from "http";
+import matchRouter from "./routes/match";
+import { setupSocketIO } from "./sockets/matchSocket";
 
 const app = express();
+app.use(express.json());
+app.use(cors({
+  origin: "http://localhost:3000", // your frontend origin
+  credentials: true,
+}));
 
-app.get("/", (req: Request, res: Response) => {
-    res.send("Matching Service is running!");
-});
+app.use("/api/match", matchRouter);
 
-export default app;
+app.get("/", (_, res) => res.send("Matching Service is running!"));
+
+const server = http.createServer(app);
+const io = setupSocketIO(server);
+
+const PORT = process.env.MATCHING_SERVICE_PORT || 3002;
+server.listen(PORT, () => console.log(`[SERVER] Running on port ${PORT}`))
+      .on("error", (err) => console.error("[SERVER] Failed to start:", err));
