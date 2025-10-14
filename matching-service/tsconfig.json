@@ -48,6 +48,6 @@
     // "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include" : ["src/**/*.ts", "src/config/frontendWs.js"],
+  "include" : ["src/**/*.ts", "src/config/frontendWS.ts"],
   "exclude": ["node_modules"]
 }

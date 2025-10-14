@@ -1,21 +1,23 @@
-// src/sockets/matchSocket.js
-import { Server as SocketIOServer } from "socket.io";
+// src/sockets/matchSocket.ts
+import { Server as SocketIOServer, Socket } from "socket.io";
+import { Server as HTTPServer } from "http";
 
-const clients = new Map();
-let io;
-export const setupSocketIO = (server) => {
+const clients: Map<string, Socket> = new Map();
+let io: SocketIOServer | null = null;
+
+
+export const setupSocketIO = (server: HTTPServer): SocketIOServer => {
     io = new SocketIOServer(server, {
         cors: {
-            origin: "*", // change to frontend URL in production
+            origin: "*", // TODO: change to frontend URL in production
         },
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: Socket) => {
         console.log("[Socket.IO] New client connected:", socket.id);
 
-        socket.on("register", (data) => {
+        socket.on("register", (data: { userId?: string }) => {
             if (data && typeof data.userId === "string") {
-                // If user already exists, disconnect old socket first
                 const existingSocket = clients.get(data.userId);
                 if (existingSocket && existingSocket.id !== socket.id) {
                     existingSocket.disconnect(true);
@@ -30,7 +32,6 @@ export const setupSocketIO = (server) => {
             }
         });
 
-
         socket.on("disconnect", () => {
             for (const [userId, s] of clients.entries()) {
                 if (s.id === socket.id) {
@@ -41,7 +42,7 @@ export const setupSocketIO = (server) => {
             }
         });
 
-        socket.on("error", (err) => {
+        socket.on("error", (err: Error) => {
             console.error("[Socket.IO] Socket error:", err);
         });
     });
@@ -49,9 +50,15 @@ export const setupSocketIO = (server) => {
     return io;
 };
 
-const notifiedPairs = new Set();
+const notifiedPairs = new Set<string>();
 
-export function notifyMatch(userA, userB) {
+
+export function notifyMatch(userA: string, userB: string): void {
+    if (!io) {
+        console.error("[Socket.IO] notifyMatch called before setupSocketIO");
+        return;
+    }
+
     const key = [userA, userB].sort().join("_");
     if (notifiedPairs.has(key)) return;
     notifiedPairs.add(key);
@@ -61,9 +68,8 @@ export function notifyMatch(userA, userB) {
         const partner = users[1 - idx];
         const socket = clients.get(u);
         if (socket) {
-            io.to(socket.id).emit("match", { partner });
+            io!.to(socket.id).emit("match", { partner });
             console.log(`[Socket.IO] Sent match notification to ${u}`);
         }
     });
 }
-

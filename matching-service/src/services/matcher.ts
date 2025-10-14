@@ -1,5 +1,5 @@
 import { dequeueUser, enqueueUser, getQueueLength, setMatch, getMatch } from "../config/redis";
-import { notifyMatch } from "../sockets/matchSocket.js";
+import { notifyMatch } from "../sockets/matchSocket";
 
 const matchingLoops: Record<string, NodeJS.Timeout> = {};
 const matchingInProgress: Record<string, boolean> = {};

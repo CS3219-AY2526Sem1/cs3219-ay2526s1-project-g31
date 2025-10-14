@@ -1,9 +1,8 @@
 import express from "express";
 import cors from "cors";
 import http from "http";
-import { setupFrontendSocket } from "./config/frontendWs.js";
 import matchRouter from "./routes/match";
-import { setupSocketIO } from "./sockets/matchSocket.js";
+import { setupSocketIO } from "./sockets/matchSocket";
 
 const app = express();
 app.use(express.json());

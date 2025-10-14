@@ -1,28 +1,27 @@
-// src/config/wsClient.js
-const { io } = require("socket.io-client");
-const { notifyMatch } = require("../sockets/matchSocket");
+// src/config/wsClient.ts
+import { io, Socket } from "socket.io-client";
+import { notifyMatch } from "../sockets/matchSocket";
 
-let socket = null;
-let userId = null;
-let reconnectInterval = null;
+let socket: Socket | null = null;
+let userId: string | null = null;
+let reconnectInterval: NodeJS.Timeout | null = null;
 const RECONNECT_DELAY = 2000;
 
-let userData = null; // properly declared
+interface UserData {
+    userId: string;
+    socketId: string;
+}
 
-// ===== Frontend clients broadcasting =====
-const frontendClients = new Set();
+let userData: UserData | null = null;
 
-/**
- * Register a frontend client socket
- * @param {Socket} clientSocket
- */
-function registerFrontendClient(clientSocket) {
+const frontendClients = new Set<Socket>();
+
+export function registerFrontendClient(clientSocket: Socket): void {
     frontendClients.add(clientSocket);
     clientSocket.on("disconnect", () => frontendClients.delete(clientSocket));
 }
 
-// ===== Connect to matching service =====
-function connectToMatchingService(uid) {
+export function connectToMatchingService(uid: string): Promise<UserData> {
     userId = uid;
 
     return new Promise((resolve, reject) => {
@@ -34,7 +33,14 @@ function connectToMatchingService(uid) {
             socket.on("connect", () => {
                 console.log("[SOCKET CLIENT] Connected to matching service");
 
-                userData = { userId, socketId: socket.id };
+                // Type-safe check: ensure socket.id exists
+                if (!socket?.id) {
+                    reject(new Error("Socket ID is undefined"));
+                    return;
+                }
+
+                // Assign userData after confirming socket.id
+                userData = { userId: uid, socketId: socket.id };
                 socket.emit("register", userData);
 
                 if (reconnectInterval) {
@@ -50,9 +56,9 @@ function connectToMatchingService(uid) {
                 attemptReconnect();
             });
 
-            socket.on("connect_error", (err) => {
+            socket.on("connect_error", (err: Error) => {
                 console.error("[SOCKET CLIENT] Connection error:", err);
-                socket.disconnect();
+                socket?.disconnect();
                 reject(err);
             });
         };
@@ -71,14 +77,12 @@ function connectToMatchingService(uid) {
     });
 }
 
-/**
- * Stops matching and disconnects socket
- */
-function stopMatching() {
+export function stopMatching(): void {
     if (socket && userId) {
         socket.emit("unregister", { userId });
         socket.disconnect();
     }
+
     socket = null;
     userId = null;
 
@@ -87,9 +91,3 @@ function stopMatching() {
         reconnectInterval = null;
     }
 }
-
-module.exports = {
-    connectToMatchingService,
-    stopMatching,
-    registerFrontendClient,
-};
