@@ -1,28 +1,29 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket;
 
 export default function CollaborationPage() {
     useEffect(() => {
-        socket = io("http://localhost:3004", { transports: ["websocket"] });
+        const socket: Socket = io("http://localhost:3004");
 
         socket.on("connect", () => {
-            console.log("[Client] Connected to server with ID:", socket.id);
+            console.log("[UI] Connected to server with ID:", socket.id);
+            socket.emit("joinDummyRoom");
+        });
+
+        socket.on("roomData", (room) => {
+            console.log("[UI] Dummy room data received:", room);
         });
 
         socket.on("disconnect", () => {
-            console.log("[Client] Disconnected from server");
+            console.log("[UI] Disconnected from server");
         });
 
         return () => { socket.disconnect() };
     }, []);
-
-    const handleIncrement = () => {
-        console.log("Increment button clicked");
-    }
     
     return (
         <div className="relative min-h-screen flex flex-col">
@@ -31,7 +32,7 @@ export default function CollaborationPage() {
             </h1>
 
             <button
-                onClick={handleIncrement}
+                onClick={ () => console.log("clicked") }
                 className="bg-blue-500 text-white px-4 py-2 rounded-md mt-4"
             >
                 Click me
