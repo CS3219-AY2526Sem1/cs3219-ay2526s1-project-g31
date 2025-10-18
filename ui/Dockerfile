@@ -18,6 +18,7 @@ WORKDIR /app/ui
 COPY --from=builder /app/ui/.next ./.next
 COPY --from=builder /app/ui/public ./public
 COPY --from=builder /app/ui/node_modules ./node_modules
+COPY --from=builder /app/ui/next.config.ts ./next.config.ts
 COPY --from=builder /app/ui/package.json ./package.json
 COPY --from=builder /app/ui/yarn.lock ./yarn.lock
 
