@@ -43,7 +43,7 @@ export function initializeSocketServer(server: any) {
         socket.on("joinDummyRoom", () => {
             socket.join(dummyRoom.roomId);
             console.log(`[Socket.IO] Client connected: ${socket.id}`);
-            socket.emit("roomData", dummyRoom);
+            socket.emit("receiveRoomData", dummyRoom);
         });
 
         socket.on("disconnect", () => {
