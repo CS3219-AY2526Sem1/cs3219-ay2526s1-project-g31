@@ -1,48 +1,147 @@
 import Redis from "ioredis";
+import { wsClients } from "./websocket";
 
 const redis = new Redis({
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: parseInt(process.env.REDIS_PORT || "6379"),
-    password:   process.env.REDIS_PASSWORD
+    host: process.env.REDIS_HOST!,
+    port: parseInt(process.env.REDIS_PORT!),
+    password: process.env.REDIS_PASSWORD!
 });
 
-const MATCH_TTL = 120; // i.e. 2 minutes
+const subscriber = new Redis({
+    host: process.env.REDIS_HOST!,
+    port: parseInt(process.env.REDIS_PORT!),
+    password: process.env.REDIS_PASSWORD!
+});
 
-/** Enqueues user by difficulty */
-export const enqueueUser = async (userId: string, difficulty: string) => {
-    const queueKey = `queue:${difficulty}`;
-    await redis.rpush(queueKey, userId);
-    await redis.expire(queueKey, MATCH_TTL);
-};
+redis.on("connect", () => {
+    console.log("Connected to Redis");
+});
 
-/** Dequeues a user by difficulty */
-export const dequeueUser = async (difficulty: string) => {
-    return await redis.lpop(`queue:${difficulty}`);
-};
+subscriber.on("connect", () => {
+    console.log("Subscriber connected to Redis");
+});
 
-/** Gets queue length */
-export const getQueueLength = async (difficulty: string) => {
-    return await redis.llen(`queue:${difficulty}`);
-};
+const MATCH_TTL = 60; // 1 minute
 
-/** Stores matched pair temporarily */
-export const setMatch = async (userA: string, userB: string) => {
-    await redis.set(`match:${userA}`, userB, "EX", MATCH_TTL);
-    await redis.set(`match:${userB}`, userA, "EX", MATCH_TTL);
-};
+interface UserMatchInfo {
+    userId: string;
+    displayName: string;
+    email?: string;
+    picture?: string;
+    difficulty: string;
+    topic: string;
+    language: string;
+}
 
-/** Retrieves a matched partner */
-export const getMatch = async (userId: string) => {
-    return await redis.get(`match:${userId}`);
-};
+/**
+ * Scan queue up to and including expired userId to remove any expired users.
+ */
+async function cleanupExpired(expiredUserId: string) {
+    // Get the user info to extract difficulty
+    const userInfo = await redis.get(`user:${expiredUserId}`);
 
-/** Removes a match */
-export const removeMatch = async (userId: string) => {
-    const partner = await getMatch(userId);
-    if (partner) {
-        await redis.del(`match:${userId}`);
-        await redis.del(`match:${partner}`);
+    if (!userInfo) return; // user not found or already cleaned up
+
+    const { difficulty } = JSON.parse(userInfo);
+    const queueKey = `queue:${difficulty.toLowerCase()}`;
+    const users = await redis.zrange(queueKey, 0, -1);
+
+    for (const userId of users) {
+        const exists = await redis.exists(`user:${userId}`);
+        if (exists && userId !== expiredUserId) continue; // skip over expired users whose keys still exist
+        await redis.zrem(queueKey, userId);
+        // Close WebSocket connection if exists
+        console.log("Closing WebSocket for user:", userId);
+        wsClients.get(userId)?.close();
+        if (userId === expiredUserId) break; // stop once we reach the expired user
     }
-};
 
-export default redis;
+    redis.del(`user:${expiredUserId}`);
+}
+
+/**
+ * Add a user to the queue and set their TTL.
+ */
+async function enqueueUser(userInfo: UserMatchInfo) {
+    const diffLower = userInfo.difficulty.toLowerCase();
+    const queueKey = `queue:${diffLower}`;
+    const userKey = `user:${userInfo.userId}`;
+    const now = Date.now();
+
+    await redis
+        .multi()
+        .set(userKey, JSON.stringify(userInfo), "EX", MATCH_TTL) // store full user info as JSON
+        .zadd(queueKey, now, userInfo.userId)
+        .exec();
+}
+
+/**
+ * Dequeue a valid pair of users (ignores expired ones).
+ * Returns full user info for both matched users.
+ */
+async function dequeueUsers(difficulty: "EASY" | "MEDIUM" | "HARD"): Promise<[UserMatchInfo | null, UserMatchInfo | null]> {
+    const diffLower = difficulty.toLowerCase();
+    const queueKey = `queue:${diffLower}`;
+
+    while (true) {
+        const candidates = await redis.zrange(queueKey, 0, 1); // oldest two
+        if (candidates.length < 2) return [null, null];
+
+        const [userId1, userId2] = candidates;
+
+        const [userInfo1, userInfo2] = await redis.mget(
+            `user:${userId1}`,
+            `user:${userId2}`
+        );
+
+        if (!userInfo1) {
+            await redis.zrem(queueKey, userId1);
+            continue;
+        }
+
+        if (!userInfo2) {
+            await redis.zrem(queueKey, userId2);
+            continue;
+        }
+
+        // both valid - remove from queue and return user info
+        await redis.zrem(queueKey, userId1, userId2);
+        return [JSON.parse(userInfo1), JSON.parse(userInfo2)];
+    }
+}
+
+/**
+ * Handle Redis key expiration events.
+ */
+subscriber.subscribe("__keyevent@0__:expired", (err) => {
+    if (err) console.error("Failed to subscribe:", err);
+    else console.log("Listening for expired user keys...");
+});
+
+// TODO: add TTL keys
+subscriber.on("message", async (_, key) => {
+    // only handle user expiration keys
+    if (!key.startsWith("user:")) return;
+
+    // key format: user:<userId>
+    const [, userId] = key.split(":");
+
+    // Get user info from the value before it expires (if still available)
+    const userInfoStr = await redis.get(key);
+    console.log("Expired key:", userInfoStr);
+
+    if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        const queueKey = `queue:${userInfo.difficulty.toLowerCase()}`;
+        console.log(`⚠️ Expired user ${userId} (${userInfo.difficulty})`);
+
+        const removed = await redis.zrem(queueKey, userId);
+        if (removed) {
+            console.log(`🧹 Cleaned ${userId} from ${queueKey}`);
+            await cleanupExpired(userId);
+        }
+    }
+});
+
+export { enqueueUser, dequeueUsers, cleanupExpired, redis };
+export type { UserMatchInfo };
