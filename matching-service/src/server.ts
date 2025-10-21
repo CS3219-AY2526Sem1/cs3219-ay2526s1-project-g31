@@ -32,7 +32,7 @@ export default server;
  * 4. If match found, send matched partner info via ws then close ws after successful send
  * 5. If no match found, keep user in queue for TTL (2 mins)
  * 
- * stop route
+ * ws close event
  * 1. User clicks stop match
  * 2. Remove user from queue, close ws
  * 
@@ -55,4 +55,5 @@ export default server;
  * 
  * TODO:
  * - TTL expiry(create a ttl key that expires, use key to clear persistent user info and queue)
+ * - protect routes
 */
