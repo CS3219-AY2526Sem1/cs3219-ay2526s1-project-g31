@@ -2,61 +2,28 @@
 
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMatch } from "@/contexts/MatchContext";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Spinner from "@/components/Spinner";
 import Header from "@/components/Header";
+import { difficulty as d, topic as t, language as l } from "@/constants/question";
 
-enum Difficulty {
-    EASY = 'Easy',
-    MEDIUM = 'Medium',
-    HARD = 'Hard'
-}
-
-enum Topic {
-    ARRAY = 'Array',
-    STRING = 'String',
-    HASH_TABLE = 'Hash Table',
-    MATH = 'Math',
-    GREEDY = 'Greedy',
-    GRAPH = 'Graph',
-    TREE = 'Tree',
-    DYNAMIC_PROGRAMMING = 'Dynamic Programming',
-    RECURSION = 'Recursion',
-    BACKTRACKING = 'Backtracking'
-}
-
-enum Language {
-    PYTHON = 'Python',
-    JAVASCRIPT = 'JavaScript',
-    JAVA = 'Java',
-    CPP = 'C++',
-    CSHARP = 'C#',
-    GO = 'Go',
-    RUBY = 'Ruby'
-}
-
-interface MatchInfo {
-    userId: string;
-    displayName: string;
-    email?: string;
-    picture?: string;
-    difficulty: string;
-    topic: string;
-    language: string;
-}
+const Difficulty = { ...d, ANY: 'Any' };
+const Topic = { ...t, ANY: 'Any' };
+const Language = { ...l, ANY: 'Any' };
 
 export default function MatchingPage() {
     const { user } = useUser();
     const { accessToken } = useAuth();
+    const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
     const router = useRouter();
 
-    const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.EASY);
-    const [topic, setTopic] = useState<Topic>(Topic.ARRAY);
-    const [language, setLanguage] = useState<Language>(Language.PYTHON);
+    const [difficulty, setDifficulty] = useState(Difficulty.EASY);
+    const [topic, setTopic] = useState(Topic.ARRAY);
+    const [language, setLanguage] = useState(Language.PYTHON);
     const [isMatching, setIsMatching] = useState(false);
-    const [matchedUser, setMatchedUser] = useState<MatchInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
@@ -79,7 +46,7 @@ export default function MatchingPage() {
 
         setIsMatching(true);
         setError(null);
-        setMatchedUser(null);
+        clearMatchedUser();
 
         try {
             const ws = new WebSocket(`ws://localhost:3002?token=${accessToken}`);
@@ -268,7 +235,7 @@ export default function MatchingPage() {
 
                             <button
                                 onClick={() => {
-                                    setMatchedUser(null);
+                                    clearMatchedUser();
                                     setError(null);
                                 }}
                                 className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
@@ -297,31 +264,28 @@ export default function MatchingPage() {
 
                     <div className="mb-6">
                         <label className="block text-white font-semibold mb-3">
-                            Select Difficulty
+                            Difficulty
                         </label>
-                        <div className="space-y-2">
-                            {Object.values(Difficulty).map((diff) => (
-                                <button
-                                    key={diff}
-                                    onClick={() => setDifficulty(diff)}
-                                    className={`w-full px-4 py-3 rounded-lg font-medium transition-all ${difficulty === diff
-                                        ? 'bg-blue-600 text-white shadow-lg scale-105'
-                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        }`}
-                                >
-                                    {diff}
-                                </button>
+                        <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            {Object.values(Difficulty).map((d) => (
+                                <option key={d} value={d}>
+                                    {d}
+                                </option>
                             ))}
-                        </div>
+                        </select>
                     </div>
 
                     <div className="mb-6">
                         <label className="block text-white font-semibold mb-3">
-                            Select Topic
+                            Topic
                         </label>
                         <select
                             value={topic}
-                            onChange={(e) => setTopic(e.target.value as Topic)}
+                            onChange={(e) => setTopic(e.target.value)}
                             className="w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             {Object.values(Topic).map((t) => (
@@ -334,11 +298,11 @@ export default function MatchingPage() {
 
                     <div className="mb-6">
                         <label className="block text-white font-semibold mb-3">
-                            Select Programming Language
+                            Programming Language
                         </label>
                         <select
                             value={language}
-                            onChange={(e) => setLanguage(e.target.value as Language)}
+                            onChange={(e) => setLanguage(e.target.value)}
                             className="w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             {Object.values(Language).map((lang) => (

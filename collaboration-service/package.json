@@ -4,13 +4,17 @@
   "main": "./src/index.ts",
   "license": "MIT",
   "scripts": {
+    "shared": "yarn --cwd ../shared install && yarn --cwd ../shared build && yarn add file:../shared --force",
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "shared": "file:../shared",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
