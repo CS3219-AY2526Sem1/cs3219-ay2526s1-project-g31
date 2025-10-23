@@ -8,8 +8,8 @@ services:
       - ./ui/.env
     ports:
       - "3000:3000"
-    networks:
-      - g31
+    # networks:
+    #   - g31
     depends_on:
       - user-service
   user-service:
