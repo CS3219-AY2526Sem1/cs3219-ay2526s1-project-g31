@@ -84,6 +84,7 @@ function closeWsConnection(userId: string, code?: number, message?: string) {
         wsClients.get(userId)?.close(code, message);
     }
     wsClients.get(userId)?.close();
+    wsClients.delete(userId);
 }
 
 export { attachWebsocketServer, notifyMatch, closeWsConnection };
