@@ -38,6 +38,20 @@ services:
       - peerprep
     depends_on:
       - redis
+  question-service:
+    build:
+      context: .
+      dockerfile: question-service/Dockerfile
+    image: question-service:latest
+    env_file:
+      - ./question-service/.env.production.local
+      - ./.env
+    ports:
+      - "3003:3003"
+    networks:
+      - peerprep
+    depends_on:
+      - mongo-init
   collaboration-service:
     build:
       context: .

@@ -1,3 +1,5 @@
+// Moved this file so that yarn build and docker build can work
+// can delete this script if not needed
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 
