@@ -2,6 +2,7 @@
 
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMatch } from "@/contexts/MatchContext";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -13,26 +14,16 @@ const Difficulty = { ...d, ANY: 'Any' };
 const Topic = { ...t, ANY: 'Any' };
 const Language = { ...l, ANY: 'Any' };
 
-interface MatchInfo {
-    userId: string;
-    displayName: string;
-    email?: string;
-    picture?: string;
-    difficulty: string;
-    topic: string;
-    language: string;
-}
-
 export default function MatchingPage() {
     const { user } = useUser();
     const { accessToken } = useAuth();
+    const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
     const router = useRouter();
 
     const [difficulty, setDifficulty] = useState(Difficulty.EASY);
     const [topic, setTopic] = useState(Topic.ARRAY);
     const [language, setLanguage] = useState(Language.PYTHON);
     const [isMatching, setIsMatching] = useState(false);
-    const [matchedUser, setMatchedUser] = useState<MatchInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
@@ -55,7 +46,7 @@ export default function MatchingPage() {
 
         setIsMatching(true);
         setError(null);
-        setMatchedUser(null);
+        clearMatchedUser();
 
         try {
             const ws = new WebSocket(`ws://localhost:3002?token=${accessToken}`);
@@ -244,7 +235,7 @@ export default function MatchingPage() {
 
                             <button
                                 onClick={() => {
-                                    setMatchedUser(null);
+                                    clearMatchedUser();
                                     setError(null);
                                 }}
                                 className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"

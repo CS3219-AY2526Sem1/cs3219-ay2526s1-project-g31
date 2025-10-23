@@ -1,18 +1,25 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { useUser } from "@/contexts/UserContext";
+import { useMatch } from "@/contexts/MatchContext";
 import { Question } from "shared";
 import { io, Socket } from "socket.io-client";
 
-
-let socket: Socket;
-
 export default function CollaborationPage() {
+    const { user: me } = useUser();
+    const { matchedUser } = useMatch();
     const [user, setUser] = useState("User");
     const [partner, setPartner] = useState("Partner");
     const [question, setQuestion] = useState<Question>();
 
     useEffect(() => {
+        if (me) {
+            setUser(me.displayName!);
+        }
+        if (matchedUser) {
+            setPartner(matchedUser.displayName!);
+        }
         const socket: Socket = io("http://localhost:3004");
 
         socket.on("connect", () => {
@@ -32,13 +39,13 @@ export default function CollaborationPage() {
         });
 
         return () => { socket.disconnect() };
-    }, []);
-    
+    }, [me, matchedUser]);
+
     return (
         <div className="relative min-h-screen flex flex-col">
             <div className="bg-blue-500 flex items-center pt-1 pb-1 pl-3 pr-3">
                 <h2 className="text-white text-3xl font-bold">PeerPrep</h2>
-                
+
                 <div className="flex-1"></div>
 
                 <p className="pr-1">{user}</p>
@@ -51,7 +58,7 @@ export default function CollaborationPage() {
                         <h1 className="text-white text-center font-bold underline text-4xl mb-2">
                             {question?.title}
                         </h1>
-                        
+
                         <p className="text-white">
                             {question?.description}
                         </p>
