@@ -1,6 +1,7 @@
-import { Server, WebSocket } from "ws";
 import jwt from "jsonwebtoken";
+import { Server, WebSocket } from "ws";
 import { cleanupExpired } from "./redis";
+import { UserMatchInfo } from "../constants/match";
 
 interface JwtPayload {
     userId: string;
@@ -51,4 +52,38 @@ function attachWebsocketServer(server: any) {
     });
 }
 
-export { wsClients, attachWebsocketServer };
+function notifyMatch(user1Info: UserMatchInfo, user2Info: UserMatchInfo, matchedDifficulty: string, matchedTopic: string, matchedLanguage: string) {
+    wsClients.get(user1Info.userId)?.send(JSON.stringify({
+        type: "match_found",
+        userId: user2Info.userId,
+        displayName: user2Info.displayName,
+        email: user2Info.email,
+        picture: user2Info.picture,
+        difficulty: matchedDifficulty,
+        topic: matchedTopic,
+        language: matchedLanguage,
+    }));
+
+    wsClients.get(user2Info.userId)?.send(JSON.stringify({
+        type: "match_found",
+        userId: user1Info.userId,
+        displayName: user1Info.displayName,
+        email: user1Info.email,
+        picture: user1Info.picture,
+        difficulty: matchedDifficulty,
+        topic: matchedTopic,
+        language: matchedLanguage,
+    }));
+
+    closeWsConnection(user1Info.userId, 4000, "Match found");
+    closeWsConnection(user2Info.userId, 4000, "Match found");
+}
+
+function closeWsConnection(userId: string, code?: number, message?: string) {
+    if (message && code) {
+        wsClients.get(userId)?.close(code, message);
+    }
+    wsClients.get(userId)?.close();
+}
+
+export { attachWebsocketServer, notifyMatch, closeWsConnection };
