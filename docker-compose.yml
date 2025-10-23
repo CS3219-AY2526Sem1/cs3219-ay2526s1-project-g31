@@ -1,3 +1,4 @@
+name: peerprep
 services:
   ui:
     build:
