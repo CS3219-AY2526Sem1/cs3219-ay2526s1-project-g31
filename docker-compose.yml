@@ -38,6 +38,20 @@ services:
       - peerprep
     depends_on:
       - redis
+  collaboration-service:
+    build:
+      context: .
+      dockerfile: collaboration-service/Dockerfile
+    image: collaboration-service:latest
+    env_file:
+      - ./collaboration-service/.env.production.local
+      - ./.env
+    ports:
+      - "3004:3004"
+    networks:
+      - peerprep
+    depends_on:
+      - redis
   redis:
     image: redis:latest
     hostname: "redis"
