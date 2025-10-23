@@ -1,0 +1,41 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_CONNECTION_STRING")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Topic {
+  ARRAY
+  STRING
+  HASH_TABLE
+  MATH
+  GREEDY
+  GRAPH
+  TREE
+  DYNAMIC_PROGRAMMING
+  RECURSION
+  BACKTRACKING
+}
+
+model Question {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  difficulty  Difficulty
+  topics      Topic[]
+  mediaUrls   String[]
+  popularity  Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  @@index([difficulty])
+  @@index([topics])
+}

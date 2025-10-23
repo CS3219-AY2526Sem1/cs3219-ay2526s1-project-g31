@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: "redis-server --requirepass ${REDIS_PASSWORD} --notify-keyspace-events Ex"
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data/db
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    command: "mongod --replSet rs0 --bind_ip_all --port 27017"
+    ports:
+      - "27017:27017"
+    # auth
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+    #   MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - ./mongo_data:/data/db
+      - ./config/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+
+volumes:
+  redis_data:
+  mongo_data:

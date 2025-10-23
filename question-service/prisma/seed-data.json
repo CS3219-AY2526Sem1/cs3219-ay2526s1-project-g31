@@ -1,0 +1,482 @@
+[
+  {
+    "title": "Two Sum",
+    "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    "difficulty": "EASY",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 95
+  },
+  {
+    "title": "Best Time to Buy and Sell Stock",
+    "description": "Given an array where the ith element is the price of a stock on day i, find the maximum profit you can achieve from a single transaction.",
+    "difficulty": "EASY",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 90
+  },
+  {
+    "title": "Maximum Subarray",
+    "description": "Find the contiguous subarray with the largest sum within an array of integers.",
+    "difficulty": "MEDIUM",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Product of Array Except Self",
+    "description": "Return an array where each element is the product of all the elements of nums except itself without using division.",
+    "difficulty": "MEDIUM",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 82
+  },
+  {
+    "title": "Trapping Rain Water",
+    "description": "Given n non-negative integers representing elevation map height, compute how much water it can trap after raining.",
+    "difficulty": "HARD",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 88
+  },
+  {
+    "title": "Merge Intervals",
+    "description": "Given a collection of intervals, merge all overlapping intervals and return the resulting array.",
+    "difficulty": "HARD",
+    "topics": ["ARRAY"],
+    "mediaUrls": [],
+    "popularity": 84
+  },
+  {
+    "title": "Valid Palindrome",
+    "description": "Given a string, determine if it is a palindrome considering only alphanumeric characters and ignoring cases.",
+    "difficulty": "EASY",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 75
+  },
+  {
+    "title": "Implement strStr()",
+    "description": "Return the index of the first occurrence of a substring needle in haystack, or -1 if it does not exist.",
+    "difficulty": "EASY",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 70
+  },
+  {
+    "title": "Longest Substring Without Repeating Characters",
+    "description": "Find the length of the longest substring without repeating characters in a string s.",
+    "difficulty": "MEDIUM",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 88
+  },
+  {
+    "title": "Longest Palindromic Substring",
+    "description": "Return the longest palindromic substring in s using dynamic programming or expand-around-center approach.",
+    "difficulty": "MEDIUM",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 83
+  },
+  {
+    "title": "Regular Expression Matching",
+    "description": "Implement regular expression matching with support for '.' and '*'.",
+    "difficulty": "HARD",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 86
+  },
+  {
+    "title": "Minimum Window Substring",
+    "description": "Given strings s and t, return the minimum window substring of s that contains all characters of t.",
+    "difficulty": "HARD",
+    "topics": ["STRING"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Contains Duplicate",
+    "description": "Check if an integer array contains any duplicates using a hash set.",
+    "difficulty": "EASY",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 83
+  },
+  {
+    "title": "Valid Anagram",
+    "description": "Determine if two strings are anagrams of each other using frequency counting.",
+    "difficulty": "EASY",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 80
+  },
+  {
+    "title": "Group Anagrams",
+    "description": "Group a list of strings into anagrams using hash maps and sorting.",
+    "difficulty": "MEDIUM",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Top K Frequent Elements",
+    "description": "Return the k most frequent elements from an integer array using a hash map and heap.",
+    "difficulty": "MEDIUM",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 87
+  },
+  {
+    "title": "LFU Cache",
+    "description": "Design and implement a data structure for Least Frequently Used (LFU) cache.",
+    "difficulty": "HARD",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 77
+  },
+  {
+    "title": "LRU Cache",
+    "description": "Design and implement a Least Recently Used (LRU) cache using a hash map and doubly linked list.",
+    "difficulty": "HARD",
+    "topics": ["HASH_TABLE"],
+    "mediaUrls": [],
+    "popularity": 89
+  },
+  {
+    "title": "Add Digits",
+    "description": "Given a non-negative integer num, repeatedly add all its digits until the result has only one digit.",
+    "difficulty": "EASY",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 73
+  },
+  {
+    "title": "Power of Three",
+    "description": "Given an integer n, return true if it is a power of three, otherwise false.",
+    "difficulty": "EASY",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 70
+  },
+  {
+    "title": "Integer to Roman",
+    "description": "Convert an integer to a Roman numeral using subtraction and mapping rules.",
+    "difficulty": "MEDIUM",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 80
+  },
+  {
+    "title": "Pow(x, n)",
+    "description": "Implement power function pow(x, n), which calculates x raised to the power n using fast exponentiation.",
+    "difficulty": "MEDIUM",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 79
+  },
+  {
+    "title": "Median of Two Sorted Arrays",
+    "description": "Given two sorted arrays, return the median of the two arrays in O(log(m+n)) time.",
+    "difficulty": "HARD",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 90
+  },
+  {
+    "title": "N-Queens II",
+    "description": "Count the total number of distinct solutions to the n-queens puzzle.",
+    "difficulty": "HARD",
+    "topics": ["MATH"],
+    "mediaUrls": [],
+    "popularity": 78
+  },
+  {
+    "title": "Assign Cookies",
+    "description": "Given children’s greed factors and cookie sizes, assign cookies to maximize the number of satisfied children.",
+    "difficulty": "EASY",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 68
+  },
+  {
+    "title": "Lemonade Change",
+    "description": "Given bills in queue order, determine if you can provide change for each customer using a greedy approach.",
+    "difficulty": "EASY",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 67
+  },
+  {
+    "title": "Gas Station",
+    "description": "Given gas and cost arrays, return the starting gas station index to complete a circular route once.",
+    "difficulty": "MEDIUM",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 83
+  },
+  {
+    "title": "Jump Game",
+    "description": "Given an array of non-negative integers, determine if you can reach the last index starting from the first.",
+    "difficulty": "MEDIUM",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 82
+  },
+  {
+    "title": "Candy",
+    "description": "Distribute candies to children according to their ratings to minimize candies while meeting constraints.",
+    "difficulty": "HARD",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 76
+  },
+  {
+    "title": "Create Maximum Number",
+    "description": "Given two arrays of digits, create the maximum number of length k from digits of both arrays.",
+    "difficulty": "HARD",
+    "topics": ["GREEDY"],
+    "mediaUrls": [],
+    "popularity": 75
+  },
+  {
+    "title": "Find Center of Star Graph",
+    "description": "Given an undirected star graph, return the center node.",
+    "difficulty": "EASY",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 70
+  },
+  {
+    "title": "Number of Provinces",
+    "description": "Given a matrix representing cities and connections, return the number of connected provinces.",
+    "difficulty": "EASY",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 78
+  },
+  {
+    "title": "Course Schedule",
+    "description": "Given number of courses and prerequisites, determine if you can finish all courses (detect cycle in directed graph).",
+    "difficulty": "MEDIUM",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 82
+  },
+  {
+    "title": "Network Delay Time",
+    "description": "Given times for directed edges and a starting node, find the time it takes for all nodes to receive the signal.",
+    "difficulty": "MEDIUM",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 81
+  },
+  {
+    "title": "Word Ladder",
+    "description": "Given two words and a dictionary, find the length of the shortest transformation sequence using BFS.",
+    "difficulty": "HARD",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 88
+  },
+  {
+    "title": "Alien Dictionary",
+    "description": "Given a sorted list of words from an alien language, derive the order of its alphabet using topological sorting.",
+    "difficulty": "HARD",
+    "topics": ["GRAPH"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Invert Binary Tree",
+    "description": "Invert a binary tree by swapping the left and right child of every node recursively.",
+    "difficulty": "EASY",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 89
+  },
+  {
+    "title": "Maximum Depth of Binary Tree",
+    "description": "Find the maximum depth of a binary tree using recursion.",
+    "difficulty": "EASY",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 87
+  },
+  {
+    "title": "Binary Tree Level Order Traversal",
+    "description": "Return the level order traversal of a binary tree using BFS.",
+    "difficulty": "MEDIUM",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Validate Binary Search Tree",
+    "description": "Determine if a binary tree is a valid binary search tree using DFS and value boundaries.",
+    "difficulty": "MEDIUM",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 84
+  },
+  {
+    "title": "Serialize and Deserialize Binary Tree",
+    "description": "Design algorithms to serialize and deserialize a binary tree using level order or DFS traversal.",
+    "difficulty": "HARD",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 83
+  },
+  {
+    "title": "Binary Tree Maximum Path Sum",
+    "description": "Find the path in a binary tree that yields the maximum sum of node values.",
+    "difficulty": "HARD",
+    "topics": ["TREE"],
+    "mediaUrls": [],
+    "popularity": 82
+  },
+  {
+    "title": "Climbing Stairs",
+    "description": "You can climb either 1 or 2 steps. Find how many distinct ways you can climb to the top.",
+    "difficulty": "EASY",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 90
+  },
+  {
+    "title": "House Robber",
+    "description": "Given an array of money in houses, determine the maximum amount you can rob without robbing adjacent houses.",
+    "difficulty": "EASY",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 88
+  },
+  {
+    "title": "Coin Change",
+    "description": "Given coins of different denominations and a total amount, compute the fewest coins needed to make up that amount.",
+    "difficulty": "MEDIUM",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 86
+  },
+  {
+    "title": "Longest Increasing Subsequence",
+    "description": "Find the length of the longest strictly increasing subsequence in an array of integers.",
+    "difficulty": "MEDIUM",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 84
+  },
+  {
+    "title": "Edit Distance",
+    "description": "Compute the minimum number of operations required to convert one string into another using dynamic programming.",
+    "difficulty": "HARD",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 80
+  },
+  {
+    "title": "Burst Balloons",
+    "description": "Given n balloons, each with a number, find the maximum coins you can collect by bursting them in an optimal order.",
+    "difficulty": "HARD",
+    "topics": ["DYNAMIC_PROGRAMMING"],
+    "mediaUrls": [],
+    "popularity": 79
+  },
+  {
+    "title": "Factorial Trailing Zeroes",
+    "description": "Return the number of trailing zeros in n! without calculating factorial directly.",
+    "difficulty": "EASY",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 65
+  },
+  {
+    "title": "Fibonacci Number",
+    "description": "Compute the nth Fibonacci number using recursion or dynamic programming.",
+    "difficulty": "EASY",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 70
+  },
+  {
+    "title": "Permutations",
+    "description": "Given an array of distinct integers, return all possible permutations using recursion or backtracking.",
+    "difficulty": "MEDIUM",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 80
+  },
+  {
+    "title": "Subsets",
+    "description": "Return all possible subsets of a given integer array using recursion or DFS.",
+    "difficulty": "MEDIUM",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 78
+  },
+  {
+    "title": "Word Search",
+    "description": "Given a 2D board and a word, find if the word exists in the grid using backtracking.",
+    "difficulty": "HARD",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 82
+  },
+  {
+    "title": "Sudoku Solver",
+    "description": "Solve a given Sudoku puzzle using recursion and backtracking.",
+    "difficulty": "HARD",
+    "topics": ["RECURSION"],
+    "mediaUrls": [],
+    "popularity": 81
+  },
+  {
+    "title": "Binary Watch",
+    "description": "Return all possible times on a binary watch with a given number of LEDs on.",
+    "difficulty": "EASY",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 68
+  },
+  {
+    "title": "Combination Sum III",
+    "description": "Find all possible combinations of k numbers that add up to n, using numbers 1-9 without repetition.",
+    "difficulty": "EASY",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 66
+  },
+  {
+    "title": "Combination Sum",
+    "description": "Given a set of numbers and a target, return all unique combinations that sum to the target.",
+    "difficulty": "MEDIUM",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 84
+  },
+  {
+    "title": "Letter Combinations of a Phone Number",
+    "description": "Given a string of digits from 2-9, return all possible letter combinations that the number could represent.",
+    "difficulty": "MEDIUM",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 83
+  },
+  {
+    "title": "N-Queens",
+    "description": "Return all distinct solutions to the n-queens puzzle placing n queens on an n×n chessboard such that no two attack each other.",
+    "difficulty": "HARD",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 85
+  },
+  {
+    "title": "Palindrome Partitioning",
+    "description": "Given a string s, partition s such that every substring of the partition is a palindrome. Return all possible palindrome partitioning of s using backtracking.",
+    "difficulty": "HARD",
+    "topics": ["BACKTRACKING"],
+    "mediaUrls": [],
+    "popularity": 84
+  }
+]
