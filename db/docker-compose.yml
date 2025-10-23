@@ -12,10 +12,9 @@ services:
     image: mongo
     container_name: mongo
     command: "mongod --replSet rs0 --bind_ip_all --port 27017"
-    # restart: always
     ports:
       - "27017:27017"
-    # TODO: require auth
+    # auth
     # environment:
     #   MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
     #   MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
