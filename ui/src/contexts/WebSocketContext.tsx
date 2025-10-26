@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface WebSocketContextValue {
   ws: WebSocket | null;
-  sendMessage: (message: any) => void;
+  sendMessage: (message: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextValue>({
@@ -38,7 +38,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, []);
 
-  const sendMessage = (message: any) => {
+  const sendMessage = (message: string) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
     }
