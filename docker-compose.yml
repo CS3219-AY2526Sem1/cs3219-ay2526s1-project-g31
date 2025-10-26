@@ -67,6 +67,17 @@ services:
       - peerprep
     depends_on:
       - redis
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    image: ai-service:latest
+    env_file:
+      - ./ai-service/.env
+    ports:
+      - "3005:3005"
+    depends_on:
+      - collaboration-service
   redis:
     image: redis:latest
     hostname: "redis"
@@ -95,7 +106,6 @@ services:
 
 networks:
   peerprep:
-
 
 volumes:
   redis_data:
