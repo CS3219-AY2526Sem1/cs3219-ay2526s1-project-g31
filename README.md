@@ -11,12 +11,9 @@ Each microservice has its own `README.md` file with instructions on how to set u
 ## Running with Docker
 Copy `.env.example` to `.env` and modify the environment variables as needed.
 
-Run the following commands to run the dev environment in a docker container:
 ```
-docker compose -f docker-compose.dev.yml down
-docker compose -f docker-compose.dev.yml build --no-cache
-docker compose -f ./redis/docker-compose.yml up
-docker compose -f docker-compose.dev.yml up
+docker compose build --no-cache
+docker compose up
 ```
 
 ## Development

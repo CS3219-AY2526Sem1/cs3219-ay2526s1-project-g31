@@ -1,23 +1,21 @@
 import express from "express";
 import cors from "cors";
 import http from "http";
-import { setupFrontendWebSocket } from "./config/frontendWS";
+import { attachWebsocketServer } from "./config/websocket";
 import matchRouter from "./routes/match";
+import { UI_BASE_URL } from "./constants/common";
 
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:3000", // your frontend origin
-  credentials: true,
+    origin: UI_BASE_URL,
+    credentials: true,
 }));
 
 app.use("/api/match", matchRouter);
-
-app.get("/", (_, res) => res.send("Matching Service is running!"));
+app.get("/", (req, res) => res.send("Matching Service is running!"));
 
 const server = http.createServer(app);
-setupFrontendWebSocket(server);
+attachWebsocketServer(server);
 
-const PORT = process.env.MATCHING_SERVICE_PORT || 3002;
-server.listen(PORT, () => console.log(`[SERVER] Running on port ${PORT}`))
-      .on("error", (err) => console.error("[SERVER] Failed to start:", err));
+export default server;
