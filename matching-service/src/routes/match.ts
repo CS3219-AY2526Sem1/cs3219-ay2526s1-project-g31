@@ -6,6 +6,7 @@ import { Difficulty, Topic, Language } from "../constants/question";
 import { resolveMatchedValue } from "../utils/match";
 
 const router = express.Router();
+const readyUsers: Record<string, Set<string>> = {};
 
 router.post("/start", async (req, res) => {
     const { userId, displayName, email, picture, difficulty, topic, language } = req.body;
@@ -35,6 +36,36 @@ router.post("/start", async (req, res) => {
         console.error("Error starting matching:", err);
         return res.status(500).send({ error: "Failed to start matching" });
     }
+});
+
+router.post("/ready", (req, res) => {
+    const { userId, matchedUserId } = req.body;
+    const pairKey = [userId, matchedUserId].sort().join("_");
+
+    if (!readyUsers[pairKey]) readyUsers[pairKey] = new Set();
+    readyUsers[pairKey].add(userId);
+
+    res.json({ status: "ok" });
+});
+
+router.get("/ready/:userId/:matchedUserId", (req, res) => {
+    const { userId, matchedUserId } = req.params;
+    const pairKey = [userId, matchedUserId].sort().join("_");
+    const readySet = readyUsers[pairKey] || new Set();
+
+    const bothReady = readySet.size === 2;
+    res.json({ bothReady });
+});
+
+router.post("/cancelReady", (req, res) => {
+    const { userId, matchedUserId } = req.body;
+    const pairKey = [userId, matchedUserId].sort().join("_");
+    
+    if (readyUsers[pairKey]) {
+        delete readyUsers[pairKey];
+    }
+
+    res.json({ status: "ok" });
 });
 
 export default router;

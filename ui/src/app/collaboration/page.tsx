@@ -7,24 +7,18 @@ import { Question } from "shared";
 import { io, Socket } from "socket.io-client";
 
 export default function CollaborationPage() {
-<<<<<<< HEAD
-    const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState<string>("");
-=======
     const { user: me } = useUser();
     const { matchedUser } = useMatch();
     const [user, setUser] = useState("User");
     const [partner, setPartner] = useState("Partner");
->>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
     const [question, setQuestion] = useState<Question>();
     const [roomId, setRoomId] = useState<string>("");
     const [userA, setUserA] = useState<string>();
     const [userB, setUserB] = useState<string>();
+    const [message, setMessage] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     useEffect(() => {
-<<<<<<< HEAD
-        socket = io("http://localhost:3004");
-=======
         if (me) {
             setUser(me.displayName!);
         }
@@ -32,7 +26,6 @@ export default function CollaborationPage() {
             setPartner(matchedUser.displayName!);
         }
         const socket: Socket = io("http://localhost:3004");
->>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
 
         socket.on("connect", () => {
             console.log("[UI] Connected to server with ID:", socket.id);
@@ -56,26 +49,8 @@ export default function CollaborationPage() {
         });
 
         return () => { socket.disconnect() };
-<<<<<<< HEAD
-    }, []);
-
-    const sendMessage = async (message?: string) => {
-        setIsLoading(true);
-        if (message != undefined) {
-            console.log("Message sent:", message);
-        }
-        setIsLoading(false);
-    }
-
-    const handleJoinRoom = async () => {
-        if (!roomId?.trim()) return;
-        socket.emit("joinRoom", { roomId });
-    }
-    
-=======
     }, [me, matchedUser]);
 
->>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
     return (
         <div className="relative min-h-screen flex flex-col">
             <div className="bg-blue-500 flex items-center pt-1 pb-1 pl-3 pr-3">
@@ -113,8 +88,8 @@ export default function CollaborationPage() {
                             />
                             <button
                                 onClick={ () => 
-                                    {console.log("Button pressed")
-                                    sendMessage(message)} }
+                                    {console.log("Button pressed")}
+                                }
                                 disabled={ isLoading }
                                 className=""
                             >
@@ -139,7 +114,7 @@ export default function CollaborationPage() {
                             />
                             <button
                                 onClick={ () => 
-                                    handleJoinRoom()
+                                    console.log("Join room pressed")
                                 }
                                 disabled={ isLoading }
                                 className=""
