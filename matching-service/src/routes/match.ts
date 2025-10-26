@@ -1,30 +1,40 @@
 import express from "express";
-import { connectToMatchingService, stopMatching } from "../config/wsClient";
-import { enqueueAndStart } from "../services/matcher";
+import { enqueueUser, dequeueUsers } from "../config/redis";
+import { UserMatchInfo } from "../constants/match";
+import { notifyMatch } from "../config/websocket";
+import { Difficulty, Topic, Language } from "../constants/question";
+import { resolveMatchedValue } from "../utils/match";
 
 const router = express.Router();
 
 router.post("/start", async (req, res) => {
-    const { userId, difficulty } = req.body;
-
-    if (!userId || !difficulty) {
-        return res.status(400).send({ error: "userId and difficulty are required" });
-    }
-
+    const { userId, displayName, email, picture, difficulty, topic, language } = req.body;
     try {
-        await enqueueAndStart(userId, difficulty);
-        connectToMatchingService(userId);
+        (async () => {
+            const userInfo: UserMatchInfo = {
+                userId,
+                displayName,
+                email,
+                picture,
+                difficulty,
+                topic,
+                language
+            };
 
-        return res.status(200).send({ message: "Matching started", userId, difficulty });
+            await enqueueUser(userInfo);
+            const pairs = await dequeueUsers(difficulty, topic, language);
+            for (const [user1Info, user2Info] of pairs) {
+                const matchedDifficulty = resolveMatchedValue(user1Info.difficulty, user2Info.difficulty, Difficulty);
+                const matchedTopic = resolveMatchedValue(user1Info.topic, user2Info.topic, Topic);
+                const matchedLanguage = resolveMatchedValue(user1Info.language, user2Info.language, Language);
+                notifyMatch(user1Info, user2Info, matchedDifficulty, matchedTopic, matchedLanguage);
+            }
+        })();
+        return res.status(200).send({ message: "Matching started" });
     } catch (err) {
-        console.error("[MATCH ROUTE] Error starting matching:", err);
+        console.error("Error starting matching:", err);
         return res.status(500).send({ error: "Failed to start matching" });
     }
-});
-
-router.post("/stop", (req, res) => {
-    stopMatching();
-    return res.status(200).send({ message: "Matching stopped" });
 });
 
 export default router;

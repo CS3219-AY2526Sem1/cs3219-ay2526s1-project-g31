@@ -1,22 +1,38 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { useUser } from "@/contexts/UserContext";
+import { useMatch } from "@/contexts/MatchContext";
 import { Question } from "shared";
 import { io, Socket } from "socket.io-client";
 
-
-let socket: Socket;
-
 export default function CollaborationPage() {
+<<<<<<< HEAD
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string>("");
+=======
+    const { user: me } = useUser();
+    const { matchedUser } = useMatch();
+    const [user, setUser] = useState("User");
+    const [partner, setPartner] = useState("Partner");
+>>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
     const [question, setQuestion] = useState<Question>();
     const [roomId, setRoomId] = useState<string>("");
     const [userA, setUserA] = useState<string>();
     const [userB, setUserB] = useState<string>();
 
     useEffect(() => {
+<<<<<<< HEAD
         socket = io("http://localhost:3004");
+=======
+        if (me) {
+            setUser(me.displayName!);
+        }
+        if (matchedUser) {
+            setPartner(matchedUser.displayName!);
+        }
+        const socket: Socket = io("http://localhost:3004");
+>>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
 
         socket.on("connect", () => {
             console.log("[UI] Connected to server with ID:", socket.id);
@@ -40,6 +56,7 @@ export default function CollaborationPage() {
         });
 
         return () => { socket.disconnect() };
+<<<<<<< HEAD
     }, []);
 
     const sendMessage = async (message?: string) => {
@@ -55,11 +72,15 @@ export default function CollaborationPage() {
         socket.emit("joinRoom", { roomId });
     }
     
+=======
+    }, [me, matchedUser]);
+
+>>>>>>> 82385771dc325585eb6b32fecf4d0f8437d1fcc8
     return (
         <div className="relative min-h-screen flex flex-col">
             <div className="bg-blue-500 flex items-center pt-1 pb-1 pl-3 pr-3">
                 <h2 className="text-white text-3xl font-bold">PeerPrep</h2>
-                
+
                 <div className="flex-1"></div>
 
                 <p className="pr-1">{ (userA == undefined) ? "Not Joined" : userA }</p>
@@ -72,7 +93,7 @@ export default function CollaborationPage() {
                         <h1 className="text-white text-center font-bold underline text-4xl mb-2">
                             {question?.title}
                         </h1>
-                        
+
                         <p className="text-white">
                             {question?.description}
                         </p>

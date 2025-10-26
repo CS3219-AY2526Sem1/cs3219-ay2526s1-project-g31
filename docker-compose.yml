@@ -1,3 +1,4 @@
+name: peerprep
 services:
   ui:
     build:
@@ -8,8 +9,6 @@ services:
       - ./ui/.env
     ports:
       - "3000:3000"
-    networks:
-      - g31
     depends_on:
       - user-service
   user-service:
@@ -23,17 +22,59 @@ services:
     ports:
       - "3001:3001"
     networks:
-      - g31
+      - peerprep
     depends_on:
       - mongo-init
+  matching-service:
+    build:
+      context: .
+      dockerfile: matching-service/Dockerfile
+    image: matching-service:latest
+    env_file:
+      - ./matching-service/.env.production.local
+      - ./.env
+    ports:
+      - "3002:3002"
+    networks:
+      - peerprep
+    depends_on:
+      - redis
+  question-service:
+    build:
+      context: .
+      dockerfile: question-service/Dockerfile
+    image: question-service:latest
+    env_file:
+      - ./question-service/.env.production.local
+      - ./.env
+    ports:
+      - "3003:3003"
+    networks:
+      - peerprep
+    depends_on:
+      - mongo-init
+  collaboration-service:
+    build:
+      context: .
+      dockerfile: collaboration-service/Dockerfile
+    image: collaboration-service:latest
+    env_file:
+      - ./collaboration-service/.env.production.local
+      - ./.env
+    ports:
+      - "3004:3004"
+    networks:
+      - peerprep
+    depends_on:
+      - redis
   redis:
     image: redis:latest
     hostname: "redis"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    ports:
-      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD} --notify-keyspace-events Ex
     volumes:
       - ./db/redis_data_build:/data/db
+    networks:
+      - peerprep
   mongo:
     image: mongo
     hostname: "mongo"
@@ -41,19 +82,19 @@ services:
     volumes:
       - ./db/mongo_data_build:/data/db
     networks:
-      - g31
+      - peerprep
   mongo-init:
     image: mongo
     volumes:
       - ./db/config/init-mongo.sh:/init-mongo.sh
     entrypoint: sh /init-mongo.sh
     networks:
-      - g31
+      - peerprep
     depends_on:
       - mongo
 
 networks:
-  g31:
+  peerprep:
 
 
 volumes:
