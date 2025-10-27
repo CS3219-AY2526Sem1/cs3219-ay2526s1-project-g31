@@ -1,6 +1,8 @@
 import express from "express";
 import { Request, Response, NextFunction } from "express";
 import { PrismaClient, Topic, Difficulty } from "@prisma/client";
+import { verifyAccessToken, authorizedRoles } from "shared/dist/middleware/jwt";
+import { UserRole } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -17,7 +19,12 @@ function validateQuestion(req: Request, res: Response, next: NextFunction) {
 }
 
 // Create a question
-router.post("/", validateQuestion, async (req, res) => {
+router.post(
+  "/",
+  verifyAccessToken,
+  authorizedRoles([UserRole.ADMIN]),
+  validateQuestion,
+  async (req, res) => {
   try {
     const { title, description, difficulty, topics, mediaUrls, popularity } = req.body;
 
