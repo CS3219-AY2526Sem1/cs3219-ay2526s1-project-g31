@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Server, WebSocket } from "ws";
+import { Server, Socket } from "socket.io";
 import { cleanupExpired } from "./redis";
 import { UserMatchInfo } from "../constants/match";
 
@@ -8,53 +8,55 @@ interface JwtPayload {
     userRole: string;
 }
 
-const wsClients = new Map<string, WebSocket>();
-
-function extractClientId(ws: WebSocket, req: any): string | null {
-    const url = new URL(req.url!, `http://${req.headers.host}`);
-    const token = url.searchParams.get("token");
-    if (!token) {
-        ws.close(4001, "Missing token");
-        return null;
-    }
-
-    try {
-        const { userId, userRole } = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as JwtPayload;
-        if (userId) {
-            if (wsClients.has(userId)) {
-                ws.close(4004, "User already connected");
-                return null;
-            }
-            wsClients.set(userId, ws);
-            console.log("Authenticated user:", { userId, userRole });
-            return userId;
-        } else {
-            ws.close(4003, "Invalid token payload");
-        }
-    } catch (err) {
-        ws.close(4002, "Invalid or expired token");
-    }
-    return null;
-}
+const socketClients = new Map<string, Socket>();
 
 function attachWebsocketServer(server: any) {
-    const wss = new Server({ server });
-    wss.on("connection", (ws: WebSocket, req) => {
-        // client connects with ws://<base_url>/?token=<access_token>
-        const clientId = extractClientId(ws, req);
+    const io = new Server(server, {
+        cors: {
+            origin: process.env.UI_BASE_URL,
+            credentials: true,
+        },
+    });
 
-        ws.on("close", () => {
-            cleanupExpired(clientId!);
-            wsClients.delete(clientId!);
-            console.log("WebSocket disconnected for client:", clientId);
+    io.use((socket, next) => {
+        const token = socket.handshake.auth.token;
+        if (!token) {
+            return next(new Error("Missing token"));
+        }
+
+        try {
+            const { userId, userRole } = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as JwtPayload;
+            if (userId) {
+                if (socketClients.has(userId)) {
+                    return next(new Error("User already connected"));
+                }
+                socket.data.userId = userId;
+                socket.data.userRole = userRole;
+                console.log("Authenticated user:", { userId, userRole });
+                next();
+            } else {
+                return next(new Error("Invalid token payload"));
+            }
+        } catch (err) {
+            return next(new Error("Invalid or expired token"));
+        }
+    });
+
+    io.on("connection", (socket: Socket) => {
+        const userId = socket.data.userId;
+        socketClients.set(userId, socket);
+        console.log(`Client connected: ${userId}`);
+
+        socket.on("disconnect", () => {
+            cleanupExpired(userId);
+            socketClients.delete(userId);
+            console.log("Socket disconnected for client:", userId);
         });
-
     });
 }
 
 function notifyMatch(user1Info: UserMatchInfo, user2Info: UserMatchInfo, matchedDifficulty: string, matchedTopic: string, matchedLanguage: string) {
-    wsClients.get(user1Info.userId)?.send(JSON.stringify({
-        type: "match_found",
+    socketClients.get(user1Info.userId)?.emit("match_found", {
         userId: user2Info.userId,
         displayName: user2Info.displayName,
         email: user2Info.email,
@@ -62,10 +64,9 @@ function notifyMatch(user1Info: UserMatchInfo, user2Info: UserMatchInfo, matched
         difficulty: matchedDifficulty,
         topic: matchedTopic,
         language: matchedLanguage,
-    }));
+    });
 
-    wsClients.get(user2Info.userId)?.send(JSON.stringify({
-        type: "match_found",
+    socketClients.get(user2Info.userId)?.emit("match_found", {
         userId: user1Info.userId,
         displayName: user1Info.displayName,
         email: user1Info.email,
@@ -73,18 +74,21 @@ function notifyMatch(user1Info: UserMatchInfo, user2Info: UserMatchInfo, matched
         difficulty: matchedDifficulty,
         topic: matchedTopic,
         language: matchedLanguage,
-    }));
+    });
 
-    closeWsConnection(user1Info.userId, 4000, "Match found");
-    closeWsConnection(user2Info.userId, 4000, "Match found");
+    closeWsConnection(user1Info.userId, "Match found");
+    closeWsConnection(user2Info.userId, "Match found");
 }
 
-function closeWsConnection(userId: string, code?: number, message?: string) {
-    if (message && code) {
-        wsClients.get(userId)?.close(code, message);
+function closeWsConnection(userId: string, reason?: string) {
+    const socket = socketClients.get(userId);
+    if (socket) {
+        if (reason) {
+            socket?.emit("disconnect_reason", { reason });
+        }
+        socket.disconnect();
+        socketClients.delete(userId);
     }
-    wsClients.get(userId)?.close();
-    wsClients.delete(userId);
 }
 
 export { attachWebsocketServer, notifyMatch, closeWsConnection };
