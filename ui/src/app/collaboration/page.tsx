@@ -1,55 +1,149 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { RoomPayload } from "../../../../collaboration-service/src/model/room";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import { useUser } from "@/contexts/UserContext";
-import { useMatch } from "@/contexts/MatchContext";
+import { PublicUser } from "../../../../collaboration-service/src/model/publicUser";
 import { Question } from "shared";
-import { io, Socket } from "socket.io-client";
+import Spinner from "@/components/Spinner";
 
 export default function CollaborationPage() {
-    const { user: me } = useUser();
-    const { matchedUser } = useMatch();
-    const [user, setUser] = useState("User");
-    const [partner, setPartner] = useState("Partner");
-    const [question, setQuestion] = useState<Question>();
-    const [roomId, setRoomId] = useState<string>("");
-    const [userA, setUserA] = useState<string>();
-    const [userB, setUserB] = useState<string>();
+    const { user } = useUser();
+    const [error, setError] = useState<string | null>(null);
+    const [roomData, setRoomData] = useState<RoomPayload>();
     const [message, setMessage] = useState<string>("");
+    const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const searchParams = useSearchParams();
+    const roomId = searchParams.get("roomId");
+
     useEffect(() => {
-        if (me) {
-            setUser(me.displayName!);
-        }
-        if (matchedUser) {
-            setPartner(matchedUser.displayName!);
-        }
-        const socket: Socket = io("http://localhost:3004");
+        if (!user || !roomId) return;
 
-        socket.on("connect", () => {
-            console.log("[UI] Connected to server with ID:", socket.id);
-        });
+        let isMounted = true;
 
-        socket.on("receiveUserData", () => {
-            if (userA == undefined) {
-                setUserA("userA");
-            } else if (userB == undefined) {
-                setUserB("userB");
+        const fetchMatchedUserId = async () => {
+            try {
+                const res = await fetch(`http://localhost:3002/api/match/getMatchedUserId/${user.id}`);
+
+                if (!res.ok) {
+                    console.error("Failed to fetch matched user ID");
+                    return null;
+                }
+
+                const matchedIdData = await res.json();
+                const matchedUserId = matchedIdData.matchedUserId;
+
+                if (!isMounted || !matchedUserId) return null;
+
+                console.log("Fetched matched user ID:", matchedUserId);
+
+                return matchedUserId;
+            } catch (err) {
+                console.error("Error fetching matched user ID:", err);
             }
-        })
 
-        socket.on("receiveRoomData", (room) => {
-            console.log("Room data received:", room);
-            setQuestion(room.question);
+            return null;
+        };
+
+        const getMatchedUserDetails = async (): Promise<string | undefined> => {
+            try {
+                const res = await fetch(`http://localhost:3002/api/match/getMatchedUser/${user.id}`);
+
+                if (!res.ok) {
+                    console.error("Failed to fetch matched user");
+                    return undefined;
+                }
+
+                const data = await res.json();
+
+                if (data.matchedUser) {
+                    return data.matchedUser.displayName;
+                } else {
+                    console.warn("Matched user not found for", user.id);
+                    return undefined;
+                }
+            } catch (err) {
+                console.error("Error fetching room data:", err);
+                return undefined;
+            }
+        };
+        
+        const poll = async (matchedUserId: string) => {
+            try {
+                const res = await fetch(
+                    `http://localhost:3002/api/match/ready/${user.id}/${matchedUserId}`
+                );
+
+                if (!res.ok) {
+                    console.error("Failed to poll readiness status");
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (data.bothReady) {
+                    if (pollIntervalRef.current) {
+                        clearInterval(pollIntervalRef.current);
+                        pollIntervalRef.current = null;
+                    }
+
+                    console.log(`[Collaboration Page] Both ${user.id} and ${matchedUserId} are ready`);
+
+                    const matchedUserDisplayName = await getMatchedUserDetails();
+
+                    if (matchedUserDisplayName === undefined) {
+                        setError('Failed to fetch matched user data');
+                        return;
+                    }
+
+                    const roomRes = await fetch(
+                        `http://localhost:3004/api/roomSetup/createRoom/${user.id}/${matchedUserId}`,
+                        {
+                            method: 'POST',
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                userDisplayName: user.displayName,
+                                matchedUserDisplayName: matchedUserDisplayName,
+                            })
+                        }
+                    );
+
+                    if (!roomRes.ok) throw new Error('Failed to create room');
+
+                    const roomData = await roomRes.json();
+                    setRoomData(roomData.newRoom);
+
+                    console.log(`[Collaboration Page] Room created: ${roomData.newRoom.roomId}`);
+                    setIsRoomCreated(true);
+                }
+            } catch (err) {
+                console.error("Error polling readiness status:", err);
+                setError('Failed to check readiness');
+            }
+        };
+
+        fetchMatchedUserId().then((matchedUserId) => {
+            if (matchedUserId) {
+                pollIntervalRef.current = setInterval(() => poll(matchedUserId), 1000);
+            }
         });
 
-        socket.on("disconnect", () => {
-            console.log("[UI] Disconnected from server");
-        });
+        return () => {
+            isMounted = false;
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+        };
+    }, [user, roomId]);
 
-        return () => { socket.disconnect() };
-    }, [me, matchedUser]);
+    if (error) return <div>Error: {error}</div>;
+    if (!roomData || !isRoomCreated) return <Spinner size="lg" fullScreen={true} />;
 
     return (
         <div className="relative min-h-screen flex flex-col">
@@ -58,19 +152,19 @@ export default function CollaborationPage() {
 
                 <div className="flex-1"></div>
 
-                <p className="pr-1">{ (userA == undefined) ? "Not Joined" : userA }</p>
-                <p className="pl-1">{ (userB == undefined) ? "Not Joined" : userB }</p>
+                <p className="pr-1">{ roomData.users[0].displayName }</p>
+                <p className="pl-1">{ roomData.users[1].displayName }</p>
             </div>
 
             <div className="flex flex-1">
                 <div className="flex flex-1 flex-col">
                     <div className="flex-1 bg-blue-900 p-4 overflow-y-auto">
                         <h1 className="text-white text-center font-bold underline text-4xl mb-2">
-                            {question?.title}
+                            {roomData.question.title}
                         </h1>
 
                         <p className="text-white">
-                            {question?.description}
+                            {roomData.question.description}
                         </p>
                     </div>
                     <div className="flex flex-1 flex-col bg-black p-2">
@@ -101,27 +195,6 @@ export default function CollaborationPage() {
                 <div className="flex flex-1 bg-orange-400 p-5">
                     <div className="flex flex-1 flex-col bg-black p-2">
                         <h1>Code editor</h1>
-
-                        <div className="flex-1"></div>
-
-                        <div className="flex border-2 border-white-100 pl-2 pr-2">
-                            <input
-                                className="flex-1 focus:outline-none"
-                                type="text"
-                                value={roomId}
-                                placeholder="Enter room ID here"
-                                onChange={ (e) => setRoomId(e.target.value) }
-                            />
-                            <button
-                                onClick={ () => 
-                                    console.log("Join room pressed")
-                                }
-                                disabled={ isLoading }
-                                className=""
-                            >
-                                Join
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

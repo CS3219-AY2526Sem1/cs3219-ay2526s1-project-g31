@@ -9,7 +9,6 @@ import Image from "next/image";
 import Spinner from "@/components/Spinner";
 import Header from "@/components/Header";
 import { difficulty as d, topic as t, language as l } from "@/constants/question";
-import { clear } from "console";
 
 const Difficulty = { ...d, ANY: 'Any' };
 const Topic = { ...t, ANY: 'Any' };
@@ -19,8 +18,8 @@ export default function MatchingPage() {
     const { user } = useUser();
     const { accessToken } = useAuth();
     const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const router = useRouter();
+    const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [difficulty, setDifficulty] = useState(Difficulty.EASY);
     const [topic, setTopic] = useState(Topic.ARRAY);
@@ -152,53 +151,24 @@ export default function MatchingPage() {
     };
 
     const handleJoinRoom = async () => {
-        if (!user || !wsRef.current || !matchedUser) return;
+        if (!user || !matchedUser) return;
 
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
 
-        setIsAwaitingMatchedUser(true);
-        
-        // Notify server that this user is ready
-        await fetch("http://localhost:3002/api/match/ready", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id, matchedUserId: matchedUser.userId })
-        });
-
-        // Poll until both users are ready
-        intervalRef.current = setInterval(async () => {
-            const res = await fetch(
-                `http://localhost:3002/api/match/ready/${user.id}/${matchedUser.userId}`
-            );
-            const data = await res.json();
-
-            if (data.bothReady) {
-                if (intervalRef.current) clearInterval(intervalRef.current);
-                console.log(`[Matching Page] Both ${user?.displayName} and ${matchedUser.userId} are ready`);
-                setIsAwaitingMatchedUser(false);
-                // TODO router.push(`/collaboration?user1=${user?.id}&user2=${matchedUser.userId}`);
-                router.push(`/collaboration`);
-            }
-        }, 1000);
-    };
-
-    const cancelJoinRoomPolling = async () => {
-        if (user && matchedUser) {
-            await fetch("http://localhost:3002/api/match/cancelReady", {
+        try {
+            await fetch("http://localhost:3002/api/match/ready", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id, matchedUserId: matchedUser.userId }),
+                body: JSON.stringify({ user: user, matchedUser: matchedUser }),
             });
+        } catch (err) {
+            console.error("Error notifying user readiness:", err);
+            setError("Failed to set user readiness");
         }
 
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-
-        setIsAwaitingMatchedUser(false);
-        console.log("[Matching Page] Cancelled waiting for matched user");
-    }
+        const roomId = [user.id, matchedUser.userId].sort().join("_");
+        router.push(`/collaboration?roomId=${roomId}`);
+    };
 
     if (isMatching) {
         return (
@@ -269,42 +239,24 @@ export default function MatchingPage() {
 
                         </div>
                         
-                        {!isAwaitingMatchedUser ? (
-                            <div className="space-y-3">
-                                <button
-                                    onClick={handleJoinRoom}
-                                    className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
-                                >
-                                    Join Room
-                                </button>
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleJoinRoom}
+                                className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                            >
+                                Join Room
+                            </button>
 
-                                <button
-                                    onClick={() => {
-                                        cancelJoinRoomPolling();
-                                        clearMatchedUser();
-                                        setError(null);
-                                    }}
-                                    className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
-                                >
-                                    Find Another Match
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                <Spinner size="lg" color="white" message="Waiting for matched user to join..." />
-
-                                <button
-                                    onClick={() => {
-                                        cancelJoinRoomPolling();
-                                        clearMatchedUser();
-                                        setError(null);
-                                    }}
-                                    className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        )}
+                            <button
+                                onClick={() => {
+                                    clearMatchedUser();
+                                    setError(null);
+                                }}
+                                className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+                            >
+                                Find Another Match
+                            </button>
+                        </div>
                         
                     </div>
                 </div>
