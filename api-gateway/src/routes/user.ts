@@ -4,7 +4,7 @@ import { proxyMiddleware } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const userRouter = Router();
-const USER_SERVICE_URL = `http://${process.env.BASE_URL}:${process.env.USER_SERVICE_PORT}`;
+const USER_SERVICE_URL = process.env.USER_SERVICE_BASE_URL!;
 
 // NOTE: enforce specific before general routes(order matters)
 

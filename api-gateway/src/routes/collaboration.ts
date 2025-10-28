@@ -4,7 +4,7 @@ import { proxyMiddleware } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const collaborationRouter = Router();
-const COLLABORATION_SERVICE_URL = `http://${process.env.BASE_URL}:${process.env.COLLABORATION_SERVICE_PORT}`;
+const COLLABORATION_SERVICE_URL = process.env.COLLABORATION_SERVICE_BASE_URL!;
 
 collaborationRouter.use("/api/collaboration",
     verifyAccessToken,

@@ -51,7 +51,7 @@ export default function MatchingPage() {
 
         try {
             // Connect to matching service through API Gateway
-            const socket = io(process.env.NEXT_PUBLIC_API_GATEWAY_BASE_URL, {
+            const socket = io(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL, {
                 path: '/socket/matching',
                 auth: {
                     token: accessToken
@@ -62,7 +62,7 @@ export default function MatchingPage() {
 
             socket.on('connect', async () => {
                 try {
-                    const response = await authFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_BASE_URL}/api/match/start`, {
+                    const response = await authFetch(`${process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL}/api/match/start`, {
                         method: 'POST',
                         body: JSON.stringify({
                             userId: user.id,

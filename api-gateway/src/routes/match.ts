@@ -4,7 +4,7 @@ import { proxyMiddleware } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const matchRouter = Router();
-const MATCHING_SERVICE_URL = `http://${process.env.BASE_URL}:${process.env.MATCHING_SERVICE_PORT}`;
+const MATCHING_SERVICE_URL = process.env.MATCHING_SERVICE_BASE_URL!;
 
 matchRouter.use("/api/match",
     verifyAccessToken,

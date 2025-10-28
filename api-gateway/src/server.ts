@@ -1,7 +1,6 @@
 import cors from "cors";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { UI_BASE_URL } from "./constants/common";
 import { userRouter } from "./routes/user";
 import { matchRouter } from "./routes/match";
 import { questionRouter } from "./routes/question";
@@ -12,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: UI_BASE_URL,
+    origin: process.env.UI_BASE_URL,
     credentials: true,
 }));
 app.use(userRouter);

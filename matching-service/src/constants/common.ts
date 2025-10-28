@@ -1,1 +1,0 @@
-export const UI_BASE_URL = `http://${process.env.BASE_URL!}:${process.env.UI_PORT!}`;

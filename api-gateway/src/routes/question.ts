@@ -4,7 +4,7 @@ import { proxyMiddleware } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const questionRouter = Router();
-const QUESTION_SERVICE_URL = `http://${process.env.BASE_URL}:${process.env.QUESTION_SERVICE_PORT}`;
+const QUESTION_SERVICE_URL = process.env.QUESTION_SERVICE_BASE_URL!;
 
 // NOTE: 
 // generically set all GET requests under /api/question/* to USER + ADMIN
