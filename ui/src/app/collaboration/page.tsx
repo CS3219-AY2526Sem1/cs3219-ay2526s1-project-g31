@@ -3,24 +3,41 @@
 import { useEffect, useRef, useState } from "react";
 import { RoomPayload } from "../../../../collaboration-service/src/model/room";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/router";
 import { useUser } from "@/contexts/UserContext";
-import { PublicUser } from "../../../../collaboration-service/src/model/publicUser";
-import { Question } from "shared";
 import Spinner from "@/components/Spinner";
+import { io, Socket } from "socket.io-client";
+
+let socket: Socket;
 
 export default function CollaborationPage() {
     const { user } = useUser();
     const [error, setError] = useState<string | null>(null);
-    const [roomData, setRoomData] = useState<RoomPayload>();
-    const [message, setMessage] = useState<string>("");
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
+    const [message, setMessage] = useState<string>("");
+    const [roomData, setRoomData] = useState<RoomPayload>();
 
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
 
+    useEffect(() => {
+        socket = io("http://localhost:3004");
+
+        socket.on("connect", () => {
+            console.log("[Socket.IO] Connected as", socket.id);
+        });
+
+        socket.on("disconnect", () => {
+            console.log("[Socket.IO] Disconnected");
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    // UseEffect to create room when both users are ready
     useEffect(() => {
         if (!user || !roomId) return;
 
@@ -142,6 +159,11 @@ export default function CollaborationPage() {
         };
     }, [user, roomId]);
 
+    const sendMessage = (message: string) => {
+        console.log(message);
+        socket.emit("message", { message });
+    }
+
     if (error) return <div>Error: {error}</div>;
     if (!roomData || !isRoomCreated) return <Spinner size="lg" fullScreen={true} />;
 
@@ -181,10 +203,11 @@ export default function CollaborationPage() {
                                 onChange={ (e) => setMessage(e.target.value) }
                             />
                             <button
-                                onClick={ () => 
-                                    {console.log("Button pressed")}
-                                }
-                                disabled={ isLoading }
+                                onClick={ () => {
+                                    sendMessage(message) 
+                                    setMessage("");
+                                }}
+                                disabled={ isSendingMessage }
                                 className=""
                             >
                                 Send

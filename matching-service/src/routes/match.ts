@@ -49,8 +49,6 @@ router.post("/ready", (req, res) => {
     }
     readyUsers[pairKey].add(user);
 
-    console.log("User marked as ready:", user.id, "for pair:", pairKey);
-
     res.json({ status: "ok" });
 });
 
