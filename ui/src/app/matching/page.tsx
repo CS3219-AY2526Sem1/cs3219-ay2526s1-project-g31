@@ -19,12 +19,10 @@ export default function MatchingPage() {
     const { accessToken } = useAuth();
     const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
     const router = useRouter();
-    const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [difficulty, setDifficulty] = useState(Difficulty.EASY);
     const [topic, setTopic] = useState(Topic.ARRAY);
     const [language, setLanguage] = useState(Language.PYTHON);
-    const [isAwaitingMatchedUser, setIsAwaitingMatchedUser] = useState(false);
     const [isMatching, setIsMatching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -156,7 +154,7 @@ export default function MatchingPage() {
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
 
         try {
-            await fetch("http://localhost:3002/api/match/ready", {
+            await fetch("http://localhost:3004/api/roomSetup/ready", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user: user, matchedUser: matchedUser }),

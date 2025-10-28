@@ -14,7 +14,8 @@ export default function CollaborationPage() {
     const [error, setError] = useState<string | null>(null);
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
-    const [message, setMessage] = useState<string>("");
+    const [messageInput, setMessageInput] = useState<string>("");
+    const [messages, setMessages] = useState<[string, string][]>([]);
     const [roomData, setRoomData] = useState<RoomPayload>();
 
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,12 +29,18 @@ export default function CollaborationPage() {
             console.log("[Socket.IO] Connected as", socket.id);
         });
 
+        socket.on("receive-message", ({ senderId, message }: { senderId: string; message: string }) => {
+            console.log("[Socket.IO] Message received:", message);
+            setMessages(prev => [...prev, [senderId, message]]);
+        });
+
         socket.on("disconnect", () => {
             console.log("[Socket.IO] Disconnected");
         });
 
         return () => {
             socket.disconnect();
+            socket.off("receive-message");
         };
     }, []);
 
@@ -45,7 +52,7 @@ export default function CollaborationPage() {
 
         const fetchMatchedUserId = async () => {
             try {
-                const res = await fetch(`http://localhost:3002/api/match/getMatchedUserId/${user.id}`);
+                const res = await fetch(`http://localhost:3004/api/roomSetup/getMatchedUserId/${user.id}`);
 
                 if (!res.ok) {
                     console.error("Failed to fetch matched user ID");
@@ -69,7 +76,7 @@ export default function CollaborationPage() {
 
         const getMatchedUserDetails = async (): Promise<string | undefined> => {
             try {
-                const res = await fetch(`http://localhost:3002/api/match/getMatchedUser/${user.id}`);
+                const res = await fetch(`http://localhost:3004/api/roomSetup/getMatchedUser/${user.id}`);
 
                 if (!res.ok) {
                     console.error("Failed to fetch matched user");
@@ -93,7 +100,7 @@ export default function CollaborationPage() {
         const poll = async (matchedUserId: string) => {
             try {
                 const res = await fetch(
-                    `http://localhost:3002/api/match/ready/${user.id}/${matchedUserId}`
+                    `http://localhost:3004/api/roomSetup/ready/${user.id}/${matchedUserId}`
                 );
 
                 if (!res.ok) {
@@ -159,9 +166,14 @@ export default function CollaborationPage() {
         };
     }, [user, roomId]);
 
-    const sendMessage = (message: string) => {
-        console.log(message);
-        socket.emit("message", { message });
+    const sendMessage = (senderId: string | undefined, message: string) => {
+        if (senderId === undefined) {
+            socket.emit("message", { senderId: "", message });
+        } else {
+            socket.emit("message", { senderId, message })
+        }
+        
+        setMessageInput("");
     }
 
     if (error) return <div>Error: {error}</div>;
@@ -174,8 +186,8 @@ export default function CollaborationPage() {
 
                 <div className="flex-1"></div>
 
-                <p className="pr-1">{ roomData.users[0].displayName }</p>
-                <p className="pl-1">{ roomData.users[1].displayName }</p>
+                <p className="p-1 border-1 border-white rounded mr-1">{ roomData.users[0].displayName }</p>
+                <p className="p-1 border-1 border-white rounded ml-1">{ roomData.users[1].displayName }</p>
             </div>
 
             <div className="flex flex-1">
@@ -189,31 +201,49 @@ export default function CollaborationPage() {
                             {roomData.question.description}
                         </p>
                     </div>
-                    <div className="flex flex-1 flex-col bg-black p-2">
-                        {/** Display messages */}
+                    <div className="flex flex-1 flex-col bg-black p-2 overflow-y-auto">
+                        <div className="flex flex-col">
+                            {messages.map(([senderId, message], idx) => (
+                                <p key={idx} className={`text-1xl mb-2 ${senderId === roomData.users[0].displayName ? "text-blue-500" : "text-green-500" }`}>
+                                    {senderId}: {message}
+                                </p>
+                            ))}
+                        </div>
                         
                         <div className="flex-1"></div>
 
+                        
+                    </div>
+                    <div className="bg-black p-2">
                         <div className="flex border-2 border-white-100 pl-2 pr-2">
                             <input
                                 className="flex-1 focus:outline-none"
                                 type="text"
-                                value={message}
+                                value={messageInput}
                                 placeholder="Enter message here"
-                                onChange={ (e) => setMessage(e.target.value) }
+                                onChange={ (e) => setMessageInput(e.target.value) }
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        setIsSendingMessage(true);
+                                        if (user) sendMessage(user.displayName, messageInput) 
+                                        setIsSendingMessage(false);
+                                    }
+                                }}
                             />
                             <button
-                                onClick={ () => {
-                                    sendMessage(message) 
-                                    setMessage("");
+                                onClick={ () => { 
+                                    setIsSendingMessage(true);
+                                    if (user) sendMessage(user.displayName, messageInput) 
+                                    setIsSendingMessage(false);
                                 }}
                                 disabled={ isSendingMessage }
                                 className=""
                             >
-                                Send
+                                {isSendingMessage ? "Loading..." : "Send"}
                             </button>
                         </div>
                     </div>
+                    
                 </div>
                 <div className="flex flex-1 bg-orange-400 p-5">
                     <div className="flex flex-1 flex-col bg-black p-2">

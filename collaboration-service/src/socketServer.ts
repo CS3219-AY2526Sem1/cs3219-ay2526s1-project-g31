@@ -11,8 +11,8 @@ export function initializeSocketServer(server: any) {
     io.on("connection", (socket) => {
         console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
-        socket.on("message", (message: any) => {
-            console.log(`[Socket.IO] Message from ${socket.id}: ${JSON.stringify(message)}`);
+        socket.on("message", ({ senderId, message }: { senderId: string; message: string }) => {
+            io.emit("receive-message", { senderId, message });
         });
 
         socket.on("disconnect", () => {
