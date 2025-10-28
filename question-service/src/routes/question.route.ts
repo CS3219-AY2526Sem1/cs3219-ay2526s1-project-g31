@@ -45,6 +45,40 @@ router.post(
   }
 });
 
+// Update a question
+router.put("/:id",
+  verifyAccessToken,
+  authorizedRoles([UserRole.ADMIN]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, description, difficulty, topics, mediaUrls, popularity } = req.body;
+
+    const updated = await prisma.question.update({
+      where: { id },
+      data: { title, description, difficulty, topics, mediaUrls, popularity },
+    });
+
+    res.json(updated);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Delete a question
+router.delete("/:id",
+  verifyAccessToken,
+  authorizedRoles([UserRole.ADMIN]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      await prisma.question.delete({ where: { id } });
+      res.json({ success: true });
+    } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // Get a random question, can filter by topic or difficulty or both
 router.get("/random", async (req, res) => {
   try {
