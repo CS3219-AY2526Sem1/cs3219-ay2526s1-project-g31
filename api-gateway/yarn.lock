@@ -945,7 +945,7 @@ setprototypeof@1.2.0:
   dependencies:
     "@types/express" "^5.0.4"
     "@types/node" "^24.9.1"
-    cookie-parser "^1.4.7"
+    express "^5.1.0"
 
 side-channel-list@^1.0.0:
   version "1.0.0"
