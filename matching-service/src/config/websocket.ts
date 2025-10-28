@@ -12,6 +12,7 @@ const socketClients = new Map<string, Socket>();
 
 function attachWebsocketServer(server: any) {
     const io = new Server(server, {
+        path: '/socket/matching',
         cors: {
             origin: process.env.UI_BASE_URL,
             credentials: true,
