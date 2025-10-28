@@ -78,7 +78,7 @@ async function cleanupExpired(expireUserId: string) {
         await redis.zrem(queueKey, userId);
         await redis.del(`user:${expireUserId}`);
         await redis.del(`ttl:${userId}`);
-        closeWsConnection(userId, 4000, "Matchmaking timed out");
+        closeWsConnection(userId, "Matchmaking timed out");
         if (userId === expireUserId) break; // stop once we reach user we want to expire
     }
 }

@@ -1,7 +1,6 @@
-import { Request } from 'express';
 import { expressjwt } from 'express-jwt';
-import type { RequestHandler } from 'express';
-import { UserRole } from '../models/user';
+import type { Response, NextFunction, RequestHandler } from 'express';
+import { UserRoleType, JwtRequest } from 'shared';
 
 /**
  * Middleware to verify JWT access token from Authorization header
@@ -19,7 +18,7 @@ export const verifyAccessToken: RequestHandler = expressjwt({
  * @param roles 
  * @returns 
  */
-export const authorizedRoles = (roles: UserRole[]): RequestHandler => {
+export const authorizedRoles = (roles: UserRoleType[]): RequestHandler => {
     return (req: JwtRequest, res, next) => {
         const userRole = req.auth?.userRole;
         if (!userRole || !roles.includes(userRole)) {
@@ -30,13 +29,12 @@ export const authorizedRoles = (roles: UserRole[]): RequestHandler => {
 };
 
 /**
- * Extended Request interface to include auth property after using verifyAccessToken middleware
+ * Middleware to attach user info from JWT to request headers for downstream services
  */
-export interface JwtRequest extends Request {
-    auth?: {
-        userId: string;
-        userRole: UserRole;
-        iat: number;
-        exp: number;
-    };
-}
+export const attachUserFromJwt = (req: JwtRequest, res: Response, next: NextFunction) => {
+    if (req.auth) {
+        req.headers['x-user-id'] = req.auth.userId;
+        req.headers['x-user-role'] = req.auth.userRole;
+    }
+    next();
+};

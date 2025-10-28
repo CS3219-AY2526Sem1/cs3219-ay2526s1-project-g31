@@ -5,7 +5,6 @@ import { User } from "@prisma/client";
 import { generateAccessToken, generateRefreshToken, RefreshTokenPayload } from '../utils/jwt';
 import { createRefreshToken, deleteRefreshToken, validateRefreshToken } from '../utils/refreshToken';
 import { JWT_REFRESH_EXPIRES_DAYS } from "../utils/jwt";
-import { UI_BASE_URL } from "../constants/common";
 import { prisma } from "../db/prisma";
 
 const router = Router();
@@ -19,12 +18,12 @@ router.get('/google/callback', async (req, res) => {
     passport.authenticate('google', { session: false }, async (err, user: User) => {
         if (err) {
             console.error('OAuth error:', err);
-            return res.redirect(`${UI_BASE_URL}/auth/login`);
+            return res.redirect(`${process.env.UI_BASE_URL}/auth/login`);
         }
 
         if (!user) {
             console.error('No user returned from OAuth');
-            return res.redirect(`${UI_BASE_URL}/auth/login`);
+            return res.redirect(`${process.env.UI_BASE_URL}/auth/login`);
         }
 
         try {
@@ -38,10 +37,10 @@ router.get('/google/callback', async (req, res) => {
                 maxAge: JWT_REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000 // days in milliseconds
             });
 
-            res.redirect(UI_BASE_URL);
+            res.redirect(`${process.env.UI_BASE_URL}`);
         } catch (error) {
             console.error('OAuth callback error:', error);
-            res.redirect(`${UI_BASE_URL}/auth/login`);
+            res.redirect(`${process.env.UI_BASE_URL}/auth/login`);
         }
     })(req, res);
 });
