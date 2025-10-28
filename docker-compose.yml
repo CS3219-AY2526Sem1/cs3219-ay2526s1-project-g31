@@ -71,7 +71,7 @@ services:
     networks:
       - peerprep
     depends_on:
-      - redis
+      - mongo-init
   redis:
     image: redis:latest
     hostname: "redis"
