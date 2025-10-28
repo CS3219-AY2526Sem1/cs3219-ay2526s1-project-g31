@@ -1,13 +1,15 @@
 import { createProxyMiddleware, fixRequestBody } from "http-proxy-middleware";
 
-export function proxyMiddleware(targetUrl: string, route: string, ws: boolean | undefined = undefined) {
+export function proxyMiddleware(targetUrl: string, route?: string, ws?: boolean, pathRewriteFn?: (path: string, req: any) => string) {
     return createProxyMiddleware({
         target: targetUrl,
         changeOrigin: true,
         ws: ws,
-        pathRewrite: (path, req) => {
-            return `${route}${path}`;
-        },
+        pathRewrite: pathRewriteFn
+            ? pathRewriteFn
+            : route
+                ? (path, req) => `${route}${path}`
+                : undefined,
         on: {
             proxyReq: (proxyReq, req, res) => {
                 const host = (req as any).headers?.host || '';

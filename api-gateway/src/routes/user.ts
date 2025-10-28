@@ -31,7 +31,10 @@ userRouter.use("/api/user/:id",
     verifyAccessToken,
     authorizedRoles([UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(USER_SERVICE_URL, "/api/user/:id")
+    proxyMiddleware(USER_SERVICE_URL, undefined, undefined, (path, req) => {
+        const id = req.params.id;
+        return `/api/user/${id}`;
+    })
 );
 
 export { userRouter };
