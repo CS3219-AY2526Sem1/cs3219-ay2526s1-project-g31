@@ -47,7 +47,7 @@ export default function AdminQuestionsPage() {
     title: '',
     description: '',
     difficulty: 'EASY',
-    topics: [],
+    topics: ['ARRAY'],
     mediaUrls: [],
     popularity: 0,
   };
