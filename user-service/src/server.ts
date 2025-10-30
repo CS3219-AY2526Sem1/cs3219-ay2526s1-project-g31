@@ -4,7 +4,6 @@ import express from "express";
 import passport from "passport";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/user";
-import { UI_BASE_URL } from "./constants/common";
 import "./strategies/google";
 
 const app = express();
@@ -12,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: UI_BASE_URL,
+    origin: process.env.UI_BASE_URL,
     credentials: true,
 }));
 app.use(passport.initialize());

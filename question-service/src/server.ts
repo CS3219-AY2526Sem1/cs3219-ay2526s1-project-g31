@@ -15,7 +15,7 @@ app.use(
 
 app.use(express.json());
 // standardise with other services
-app.use("/api/questions", questionRouter);
+app.use("/api/question", questionRouter);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Question Service is running!");
