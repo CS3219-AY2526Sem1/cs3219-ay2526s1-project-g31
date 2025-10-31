@@ -12,7 +12,6 @@ type Question = {
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   topics: string[];         // array<enum Topic> in db
   mediaUrls?: string[];
-  popularity?: number;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -49,7 +48,6 @@ export default function AdminQuestionsPage() {
     difficulty: 'EASY',
     topics: ['ARRAY'],
     mediaUrls: [],
-    popularity: 0,
   };
   const [newDraft, setNewDraft] = useState<Question>(emptyDraft);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -66,9 +64,9 @@ export default function AdminQuestionsPage() {
       setLoadingList(true);
       setError(null);
       try {
-        // GET /questions
+        // GET /question
         const res = await authFetch(
-          `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/questions`
+          `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/question`
         );
         if (!res.ok) {
           const text = await res.text();
@@ -100,11 +98,10 @@ export default function AdminQuestionsPage() {
         difficulty: editing.difficulty,
         topics: editing.topics,
         mediaUrls: editing.mediaUrls || [],
-        popularity: editing.popularity ?? 0,
       };
 
       const res = await authFetch(
-        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/questions/${encodeURIComponent(editing.id)}`,
+        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/question/${encodeURIComponent(editing.id)}`,
         {
           method: 'PUT',
           body: JSON.stringify(body),
@@ -140,7 +137,7 @@ export default function AdminQuestionsPage() {
     setError(null);
     try {
       const res = await authFetch(
-        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/questions/${encodeURIComponent(selected.id)}`,
+        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/question/${encodeURIComponent(selected.id)}`,
         {
           method: 'DELETE',
         }
@@ -176,11 +173,10 @@ export default function AdminQuestionsPage() {
         difficulty: newDraft.difficulty,
         topics: newDraft.topics,
         mediaUrls: newDraft.mediaUrls || [],
-        popularity: newDraft.popularity ?? 0,
       };
 
       const res = await authFetch(
-        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/questions`,
+        `${process.env.NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL}/api/question`,
         {
           method: 'POST',
           body: JSON.stringify(body),
@@ -348,45 +344,25 @@ export default function AdminQuestionsPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-200 mb-1">
-                          Difficulty
-                        </label>
-                        <select
-                          className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                          value={editing.difficulty || 'EASY'}
-                          disabled={busy}
-                          onChange={(e) =>
-                            setEditing({
-                              ...editing,
-                              difficulty: e.target.value as Question['difficulty'],
-                            })
-                          }
-                        >
-                          <option value="EASY">EASY</option>
-                          <option value="MEDIUM">MEDIUM</option>
-                          <option value="HARD">HARD</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-200 mb-1">
-                          Popularity (number)
-                        </label>
-                        <input
-                          type="number"
-                          className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                          value={editing.popularity ?? 0}
-                          disabled={busy}
-                          onChange={(e) =>
-                            setEditing({
-                              ...editing,
-                              popularity: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-200 mb-1">
+                        Difficulty
+                      </label>
+                      <select
+                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
+                        value={newDraft.difficulty}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setNewDraft({
+                            ...newDraft,
+                            difficulty: e.target.value as Question['difficulty'],
+                          })
+                        }
+                      >
+                        <option value="EASY">EASY</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="HARD">HARD</option>
+                      </select>
                     </div>
 
                     <div>
@@ -518,45 +494,25 @@ export default function AdminQuestionsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-1">
-                        Difficulty
-                      </label>
-                      <select
-                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                        value={newDraft.difficulty}
-                        disabled={busy}
-                        onChange={(e) =>
-                          setNewDraft({
-                            ...newDraft,
-                            difficulty: e.target.value as Question['difficulty'],
-                          })
-                        }
-                      >
-                        <option value="EASY">EASY</option>
-                        <option value="MEDIUM">MEDIUM</option>
-                        <option value="HARD">HARD</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-1">
-                        Popularity (number)
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                        value={newDraft.popularity ?? 0}
-                        disabled={busy}
-                        onChange={(e) =>
-                          setNewDraft({
-                            ...newDraft,
-                            popularity: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-1">
+                      Difficulty
+                    </label>
+                    <select
+                      className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
+                      value={newDraft.difficulty}
+                      disabled={busy}
+                      onChange={(e) =>
+                        setNewDraft({
+                          ...newDraft,
+                          difficulty: e.target.value as Question['difficulty'],
+                        })
+                      }
+                    >
+                      <option value="EASY">EASY</option>
+                      <option value="MEDIUM">MEDIUM</option>
+                      <option value="HARD">HARD</option>
+                    </select>
                   </div>
 
                   <div>

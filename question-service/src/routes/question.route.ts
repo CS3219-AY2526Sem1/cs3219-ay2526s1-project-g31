@@ -1,8 +1,6 @@
 import express from "express";
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient, Topic, Difficulty } from "@prisma/client";
-import { verifyAccessToken, authorizedRoles } from "shared/dist/middleware/jwt";
-import { UserRole } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -21,12 +19,10 @@ function validateQuestion(req: Request, res: Response, next: NextFunction) {
 // Create a question
 router.post(
   "/",
-  verifyAccessToken,
-  authorizedRoles([UserRole.ADMIN]),
   validateQuestion,
   async (req, res) => {
   try {
-    const { title, description, difficulty, topics, mediaUrls, popularity } = req.body;
+    const { title, description, difficulty, topics, mediaUrls } = req.body;
 
     const question = await prisma.question.create({
       data: {
@@ -35,7 +31,6 @@ router.post(
         difficulty,
         topics,
         mediaUrls: mediaUrls || [],
-        popularity: popularity || 0,
       },
     });
 
@@ -47,16 +42,14 @@ router.post(
 
 // Update a question
 router.put("/:id",
-  verifyAccessToken,
-  authorizedRoles([UserRole.ADMIN]),
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, difficulty, topics, mediaUrls, popularity } = req.body;
+      const { title, description, difficulty, topics, mediaUrls } = req.body;
 
     const updated = await prisma.question.update({
       where: { id },
-      data: { title, description, difficulty, topics, mediaUrls, popularity },
+      data: { title, description, difficulty, topics, mediaUrls },
     });
 
     res.json(updated);
@@ -67,8 +60,6 @@ router.put("/:id",
 
 // Delete a question
 router.delete("/:id",
-  verifyAccessToken,
-  authorizedRoles([UserRole.ADMIN]),
   async (req, res) => {
     try {
       const { id } = req.params;

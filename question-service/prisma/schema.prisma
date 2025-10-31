@@ -7,11 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum UserRole {
-  USER
-  ADMIN
-}
-
 enum Difficulty {
   EASY
   MEDIUM
@@ -38,7 +33,6 @@ model Question {
   difficulty  Difficulty
   topics      Topic[]
   mediaUrls   String[]
-  popularity  Int          @default(0)
   createdAt   DateTime     @default(now())
 
   @@index([difficulty])
