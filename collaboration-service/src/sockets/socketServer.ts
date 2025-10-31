@@ -1,5 +1,11 @@
 import { Server } from "socket.io";
 
+/**
+ * Server-side of Socket.IO
+ * 
+ * @param server Server for collaboration service.
+ * @returns Socket.IO to use for collaboration service.
+ */
 export function initializeSocketServer(server: any) {
     const io = new Server(server, {
         cors: {

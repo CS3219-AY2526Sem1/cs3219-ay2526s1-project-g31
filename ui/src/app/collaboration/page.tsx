@@ -1,27 +1,43 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import { RoomPayload } from "../../../../collaboration-service/src/model/room";
-import { useSearchParams } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
-import Spinner from "@/components/Spinner";
+import { useSearchParams } from "next/navigation";
+
 import { io, Socket } from "socket.io-client";
+import { Editor } from "@monaco-editor/react";
+import type { editor as MonacoEditor } from "monaco-editor";
+import { WebrtcProvider } from "y-webrtc";
+import { MonacoBinding } from "y-monaco";
+import * as Y from "yjs"
+
+import { RoomPayload } from "../../../../collaboration-service/src/model/room";
+import Spinner from "@/components/Spinner";
+import { useMatch } from "@/contexts/MatchContext";
 
 let socket: Socket;
 
 export default function CollaborationPage() {
     const { user } = useUser();
-    const [error, setError] = useState<string | null>(null);
-    const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
-    const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
-    const [messageInput, setMessageInput] = useState<string>("");
-    const [messages, setMessages] = useState<[string, string][]>([]);
-    const [roomData, setRoomData] = useState<RoomPayload>();
-
-    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const { matchedUser } = useMatch();
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
+    const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor>(null);
+    const providerRef = useRef<WebrtcProvider | null>(null);
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    
+    const [codespace, setCodespace] = useState<Y.Doc | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isEditorReady, setIsEditorReady] = useState(false);
+    const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
+    const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
+    const [messages, setMessages] = useState<[string, string][]>([]);
+    const [messageInput, setMessageInput] = useState<string>("");
+    const [roomData, setRoomData] = useState<RoomPayload>();
 
+    /**
+     * Handles Socket.IO emissions
+     */
     useEffect(() => {
         socket = io("http://localhost:3004");
 
@@ -46,61 +62,14 @@ export default function CollaborationPage() {
 
     // UseEffect to create room when both users are ready
     useEffect(() => {
-        if (!user || !roomId) return;
+        if (!user || !matchedUser || !roomId) return;
 
         let isMounted = true;
-
-        const fetchMatchedUserId = async () => {
-            try {
-                const res = await fetch(`http://localhost:3004/api/roomSetup/getMatchedUserId/${user.id}`);
-
-                if (!res.ok) {
-                    console.error("Failed to fetch matched user ID");
-                    return null;
-                }
-
-                const matchedIdData = await res.json();
-                const matchedUserId = matchedIdData.matchedUserId;
-
-                if (!isMounted || !matchedUserId) return null;
-
-                console.log("Fetched matched user ID:", matchedUserId);
-
-                return matchedUserId;
-            } catch (err) {
-                console.error("Error fetching matched user ID:", err);
-            }
-
-            return null;
-        };
-
-        const getMatchedUserDetails = async (): Promise<string | undefined> => {
-            try {
-                const res = await fetch(`http://localhost:3004/api/roomSetup/getMatchedUser/${user.id}`);
-
-                if (!res.ok) {
-                    console.error("Failed to fetch matched user");
-                    return undefined;
-                }
-
-                const data = await res.json();
-
-                if (data.matchedUser) {
-                    return data.matchedUser.displayName;
-                } else {
-                    console.warn("Matched user not found for", user.id);
-                    return undefined;
-                }
-            } catch (err) {
-                console.error("Error fetching room data:", err);
-                return undefined;
-            }
-        };
         
-        const poll = async (matchedUserId: string) => {
+        const poll = async () => {
             try {
                 const res = await fetch(
-                    `http://localhost:3004/api/roomSetup/ready/${user.id}/${matchedUserId}`
+                    `http://localhost:3004/api/roomSetup/users/${user.id}/${matchedUser.userId}`
                 );
 
                 if (!res.ok) {
@@ -116,25 +85,10 @@ export default function CollaborationPage() {
                         pollIntervalRef.current = null;
                     }
 
-                    console.log(`[Collaboration Page] Both ${user.id} and ${matchedUserId} are ready`);
-
-                    const matchedUserDisplayName = await getMatchedUserDetails();
-
-                    if (matchedUserDisplayName === undefined) {
-                        setError('Failed to fetch matched user data');
-                        return;
-                    }
+                    console.log(`[Collaboration Page] Both ${user.id} and ${matchedUser.userId} are ready`);
 
                     const roomRes = await fetch(
-                        `http://localhost:3004/api/roomSetup/createRoom/${user.id}/${matchedUserId}`,
-                        {
-                            method: 'POST',
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                userDisplayName: user.displayName,
-                                matchedUserDisplayName: matchedUserDisplayName,
-                            })
-                        }
+                        `http://localhost:3004/api/roomSetup/room/${user.id}/${matchedUser.userId}`
                     );
 
                     if (!roomRes.ok) throw new Error('Failed to create room');
@@ -150,12 +104,8 @@ export default function CollaborationPage() {
                 setError('Failed to check readiness');
             }
         };
-
-        fetchMatchedUserId().then((matchedUserId) => {
-            if (matchedUserId) {
-                pollIntervalRef.current = setInterval(() => poll(matchedUserId), 1000);
-            }
-        });
+        
+        pollIntervalRef.current = setInterval(() => poll(), 1000);
 
         return () => {
             isMounted = false;
@@ -164,11 +114,82 @@ export default function CollaborationPage() {
                 pollIntervalRef.current = null;
             }
         };
-    }, [user, roomId]);
+    }, [user, matchedUser, roomId]);
 
+    /**
+     * Handles Yjs document retrieval
+     */
+    useEffect(() => {
+        const fetchDoc = async () => {
+            if (!roomId) return;
+
+            const res = await fetch(`http://localhost:3004/api/roomSetup/codespace/${roomId}`);
+            const data = await res.json();
+
+            if (!data?.doc) return;
+
+            const state = Uint8Array.from(atob(data.doc), c => c.charCodeAt(0));
+
+            const ydoc = new Y.Doc();
+            Y.applyUpdate(ydoc, state);
+
+            setCodespace(ydoc);
+        };
+
+        fetchDoc();
+    }, [roomData]);
+
+    /**
+     * Handles Yjs injection to Monaco Editor
+     */
+    useEffect(() => {
+        if (!codespace || !editorRef.current || !roomId) return;
+
+        const editor = editorRef.current;
+        const model = editor.getModel();
+        if (!model) return;
+
+        const provider = new WebrtcProvider(roomId, codespace, {
+            signaling: ["wss://y-webrtc.fly.dev"]
+        });
+        providerRef.current = provider;
+
+        try {
+            provider.awareness.setLocalStateField("user", {
+                name: user?.displayName ?? "Anonymous",
+                id: user?.id ?? null
+            });
+        } catch (e) {
+            console.warn("Could not set awareness:", e);
+        }
+
+        provider.on("synced", (isSynced) => {
+            console.log(`[Y.Webrtc] synced=${isSynced} room=${roomId}`);
+        });
+
+        const yText = codespace.getText("monaco");
+        const binding = new MonacoBinding(
+            yText,
+            model,
+            new Set([editor]),
+            provider.awareness
+        );
+
+        return () => {
+            binding.destroy();
+            provider.destroy();
+        };
+    }, [codespace, isEditorReady]);
+
+    /**
+     * Notifies Server that message is being sent.
+     * 
+     * @param senderId Display name of user sending the message.
+     * @param message Message content to be sent.
+     */
     const sendMessage = (senderId: string | undefined, message: string) => {
         if (senderId === undefined) {
-            socket.emit("message", { senderId: "", message });
+            socket.emit("message", { senderId: "", message: "Failed to send message" });
         } else {
             socket.emit("message", { senderId, message })
         }
@@ -181,17 +202,27 @@ export default function CollaborationPage() {
 
     return (
         <div className="relative min-h-screen flex flex-col">
+            {/**
+             * Header
+             */}
             <div className="bg-blue-500 flex items-center pt-1 pb-1 pl-3 pr-3">
                 <h2 className="text-white text-3xl font-bold">PeerPrep</h2>
 
                 <div className="flex-1"></div>
 
-                <p className="p-1 border-1 border-white rounded mr-1">{ roomData.users[0].displayName }</p>
-                <p className="p-1 border-1 border-white rounded ml-1">{ roomData.users[1].displayName }</p>
+                <p className="p-1 border-1 border-white rounded mr-1">
+                    { (user?.displayName === undefined) ? "User" : user.displayName }
+                </p>
+                <p className="p-1 border-1 border-white rounded ml-1">
+                    { (matchedUser?.displayName === undefined) ? "Matched User" : matchedUser.displayName }
+                </p>
             </div>
 
             <div className="flex flex-1">
                 <div className="flex flex-1 flex-col">
+                    {/**
+                     * Space for Question details
+                     */}
                     <div className="flex-1 bg-blue-900 p-4 overflow-y-auto">
                         <h1 className="text-white text-center font-bold underline text-4xl mb-2">
                             {roomData.question.title}
@@ -201,10 +232,20 @@ export default function CollaborationPage() {
                             {roomData.question.description}
                         </p>
                     </div>
+                    {/**
+                     * Chat Box
+                     */}
                     <div className="flex flex-1 flex-col bg-black p-2 overflow-y-auto">
                         <div className="flex flex-col">
                             {messages.map(([senderId, message], idx) => (
-                                <p key={idx} className={`text-1xl mb-2 ${senderId === roomData.users[0].displayName ? "text-blue-500" : "text-green-500" }`}>
+                                <p
+                                    key={idx}
+                                    // Have to change so that text color is deterministic for users
+                                    className={`text-1xl mb-2 ${
+                                        senderId === "" ? "text-white" :
+                                        (roomId?.split("_")[0] === user?.id) ? "text-blue-500" : "text-green-500"
+                                    }`
+                                }>
                                     {senderId}: {message}
                                 </p>
                             ))}
@@ -225,7 +266,7 @@ export default function CollaborationPage() {
                                 onKeyDown={e => {
                                     if (e.key === "Enter") {
                                         setIsSendingMessage(true);
-                                        if (user) sendMessage(user.displayName, messageInput) 
+                                        if (user) sendMessage(user.id, messageInput) 
                                         setIsSendingMessage(false);
                                     }
                                 }}
@@ -233,7 +274,7 @@ export default function CollaborationPage() {
                             <button
                                 onClick={ () => { 
                                     setIsSendingMessage(true);
-                                    if (user) sendMessage(user.displayName, messageInput) 
+                                    if (user) sendMessage(user.id, messageInput) 
                                     setIsSendingMessage(false);
                                 }}
                                 disabled={ isSendingMessage }
@@ -243,12 +284,21 @@ export default function CollaborationPage() {
                             </button>
                         </div>
                     </div>
-                    
                 </div>
+                {/**
+                 * Code Space Editor
+                 */}
                 <div className="flex flex-1 bg-orange-400 p-5">
-                    <div className="flex flex-1 flex-col bg-black p-2">
-                        <h1>Code editor</h1>
-                    </div>
+                    <Editor
+                        height="100%"
+                        width="100%"
+                        theme="vs-dark"
+                        options={{ padding: { top: 20, bottom: 20 } }}
+                        onMount={(editor) => { 
+                            editorRef.current = editor;
+                            setIsEditorReady(true);
+                        }}
+                    />
                 </div>
             </div>
         </div>

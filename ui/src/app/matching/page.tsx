@@ -154,7 +154,7 @@ export default function MatchingPage() {
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
 
         try {
-            await fetch("http://localhost:3004/api/roomSetup/ready", {
+            await fetch("http://localhost:3004/api/roomSetup/me", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user: user, matchedUser: matchedUser }),
