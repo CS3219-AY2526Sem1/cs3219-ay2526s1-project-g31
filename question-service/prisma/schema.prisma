@@ -33,7 +33,6 @@ model Question {
   difficulty  Difficulty
   topics      Topic[]
   mediaUrls   String[]
-  popularity  Int          @default(0)
   createdAt   DateTime     @default(now())
 
   @@index([difficulty])
