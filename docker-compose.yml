@@ -28,7 +28,7 @@ services:
     hostname: "user-service"
     env_file:
       - ./user-service/.env.production.local
-      - ./.env
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -41,7 +41,7 @@ services:
     hostname: "matching-service"
     env_file:
       - ./matching-service/.env.production.local
-      - ./.env
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -54,7 +54,7 @@ services:
     hostname: "question-service"
     env_file:
       - ./question-service/.env.production.local
-      - ./.env
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -67,7 +67,7 @@ services:
     hostname: "collaboration-service"
     env_file:
       - ./collaboration-service/.env.production.local
-      - ./.env
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
