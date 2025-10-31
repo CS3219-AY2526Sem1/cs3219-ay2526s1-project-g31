@@ -24,3 +24,12 @@ To run the mongo shell to connect to the MongoDB server, run the following comma
 ```
 docker exec -it mongo mongosh
 ```
+
+To set an admin user in mongosh, run the following command:
+
+```
+db.User.updateOne(
+  { email: "<USER_EMAIL>" },
+  { $set: { role: "ADMIN" } }
+)
+```
