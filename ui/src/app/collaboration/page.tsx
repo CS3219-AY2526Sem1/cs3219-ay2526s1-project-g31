@@ -88,7 +88,11 @@ export default function CollaborationPage() {
                     console.log(`[Collaboration Page] Both ${user.id} and ${matchedUser.userId} are ready`);
 
                     const roomRes = await fetch(
-                        `http://localhost:3004/api/roomSetup/room/${user.id}/${matchedUser.userId}`
+                        `http://localhost:3004/api/roomSetup/room/${user.id}/${matchedUser.userId}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                        }
                     );
 
                     if (!roomRes.ok) throw new Error('Failed to create room');
@@ -243,10 +247,10 @@ export default function CollaborationPage() {
                                     // Have to change so that text color is deterministic for users
                                     className={`text-1xl mb-2 ${
                                         senderId === "" ? "text-white" :
-                                        (roomId?.split("_")[0] === user?.id) ? "text-blue-500" : "text-green-500"
+                                        (roomId?.split("_")[0] === senderId) ? "text-blue-500" : "text-green-500"
                                     }`
                                 }>
-                                    {senderId}: {message}
+                                    {(senderId === user?.id) ? user.displayName : matchedUser?.displayName}: {message}
                                 </p>
                             ))}
                         </div>
