@@ -16,6 +16,7 @@ import Spinner from "@/components/Spinner";
 import { useMatch } from "@/contexts/MatchContext";
 
 let socket: Socket;
+const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"] as const;
 
 export default function CollaborationPage() {
     const { user } = useUser();
@@ -23,9 +24,6 @@ export default function CollaborationPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
-    const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor>(null);
-    const providerRef = useRef<WebrtcProvider | null>(null);
-    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     
     const [codespace, setCodespace] = useState<Y.Doc | null>(null);
     const [countdown, setCountdown] = useState<number | null>(null);
@@ -37,6 +35,18 @@ export default function CollaborationPage() {
     const [messages, setMessages] = useState<[string, string][]>([]);
     const [messageInput, setMessageInput] = useState<string>("");
     const [roomData, setRoomData] = useState<RoomPayload>();
+
+    // References
+    const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor>(null);
+    const providerRef = useRef<WebrtcProvider | null>(null);
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // AI Integration
+    const [aiMessages, setAiMessages] = useState<[string, string][]>([]);
+    const [aiInput, setAiInput] = useState<string>("");
+    const [aiMode, setAiMode] = useState<typeof AI_MODES[number]>("hint");
+    const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
+    const [isSendingAiMessage, setIsSendingAiMessage] = useState<boolean>(false);
 
     /**
      * Handles Socket.IO emissions
@@ -244,6 +254,9 @@ export default function CollaborationPage() {
         setMessageInput("");
     }
 
+    /**
+     * Handles session closure.
+     */
     const handleClose = () => {
         if (!isClosing) {
             if (confirm("Do you want to close the session in 1 minute?")) {
@@ -255,6 +268,47 @@ export default function CollaborationPage() {
             }
         }
     }
+
+    /**
+     * Sends a user prompt to the AI service.
+     */
+    const sendAiMessage = async () => {
+        if (!user || !roomData || !aiInput.trim()) return; // Ensure user and question exist
+        setIsSendingAiMessage(true);
+
+        // Get code from editor if any
+        const code = editorRef.current?.getValue() ?? "";
+
+        setAiMessages(prev => [...prev, [user.displayName ?? "You", aiInput]]);
+
+        try {
+            const res = await fetch(`http://localhost:3005/api/ai/${aiMode}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: `${roomData.question.title}\n\n${roomData.question.description}`, // title + description
+                    code: code || "",
+                    prompt: aiInput,
+                    session_id: user.id
+                })
+            });
+
+            const data = await res.json();
+
+            // Add AI response to chat
+            if (data.response) {
+                setAiMessages(prev => [...prev, ["AI", data.response]]);
+            } else {
+                setAiMessages(prev => [...prev, ["AI", "No response from AI"]]);
+            }
+        } catch (err) {
+            console.error(err);
+            setAiMessages(prev => [...prev, ["AI", "Failed to get response from AI"]]);
+        } finally {
+            setMessageInput("");
+            setIsSendingAiMessage(false);
+        }
+    };
 
     if (error) return <div>Error: {error}</div>;
     if (!roomData || !isRoomCreated) return <Spinner size="lg" fullScreen={true} />;
@@ -350,6 +404,81 @@ export default function CollaborationPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* =================== AI Sidebar =================== */}
+                {/* Floating toggle button */}
+                <button
+                    className="fixed bottom-4 right-4 bg-yellow-500 p-3 rounded-full shadow-lg z-50"
+                    onClick={() => setIsAiOpen(true)}
+                >
+                    AI
+                </button>
+
+                {/* Sidebar container */}
+                <div
+                    className={`fixed top-0 right-0 h-full w-96 bg-gray-900 shadow-lg transform transition-transform duration-300 
+                        ${isAiOpen ? "translate-x-0" : "translate-x-full"} flex flex-col z-50`}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                        <h3 className="text-white font-bold text-lg">AI Chat</h3>
+                        <button
+                            className="text-white text-xl font-bold"
+                            onClick={() => setIsAiOpen(false)}
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    {/* Messages container */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        {aiMessages.map(([sender, msg], idx) => (
+                            <p
+                                key={idx}
+                                className={`text-sm ${sender === "AI" ? "text-yellow-400" : "text-blue-500"
+                                    }`}
+                            >
+                                <strong>{sender}:</strong> {msg}
+                            </p>
+                        ))}
+                    </div>
+
+                    {/* Input + mode selector */}
+                    <div className="p-4 border-t border-gray-700 flex flex-col space-y-2">
+                        <select
+                            value={aiMode}
+                            onChange={(e) => setAiMode(e.target.value as typeof AI_MODES[number])}
+                            className="p-2 rounded bg-gray-800 text-white"
+                        >
+                            {AI_MODES.map((mode) => (
+                                <option key={mode} value={mode}>
+                                    {mode}
+                                </option>
+                            ))}
+                        </select>
+
+                        <div className="flex space-x-2">
+                            <input
+                                className="flex-1 p-2 rounded bg-gray-800 text-white focus:outline-none"
+                                type="text"
+                                value={aiInput}
+                                placeholder="Send message to AI"
+                                onChange={(e) => setAiInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") sendAiMessage();
+                                }}
+                            />
+                            <button
+                                onClick={sendAiMessage}
+                                disabled={isSendingAiMessage}
+                                className="bg-yellow-500 p-2 rounded text-black"
+                            >
+                                {isSendingAiMessage ? "Loading..." : "Send"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 {/**
                  * Code Space Editor
                  */}

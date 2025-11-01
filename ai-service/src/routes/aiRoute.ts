@@ -6,6 +6,7 @@ interface Message {
   ai: string;
 }
 
+
 const router = express.Router();
 
 // Temporary in-memory memory store
@@ -67,6 +68,7 @@ Your objectives:
 Now respond as a helpful tutor who remembers the context and keeps explanations connected across turns.
 `;
 
+
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
     ...history,
@@ -74,7 +76,7 @@ Now respond as a helpful tutor who remembers the context and keeps explanations 
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "explain", response });
+  res.json({ task: "explain", response: response.response });
 });
 
 router.post("/hint", async (req, res) => {
@@ -124,7 +126,7 @@ Now, respond as a helpful tutor who gives strategic hints that help the user pro
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "hint", response });
+  res.json({ task: "hint", response: response.response });
 });
 
 router.post("/suggest", async (req, res) => {
@@ -167,6 +169,7 @@ Your objectives:
 Now, respond as a helpful tutor giving specific, actionable suggestions that move the user closer to solving their problem.
 `;
 
+
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
     ...history,
@@ -174,7 +177,7 @@ Now, respond as a helpful tutor giving specific, actionable suggestions that mov
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "suggest", response });
+  res.json({ task: "suggest", response: response.response });
 });
 
 router.post("/testcases", async (req, res) => {
@@ -221,6 +224,7 @@ Your objectives:
 Now, respond as a tutor generating thoughtful, well-structured test cases to help the user validate their code.
 `;
 
+
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
     ...history,
@@ -228,7 +232,7 @@ Now, respond as a tutor generating thoughtful, well-structured test cases to hel
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "testcases", response });
+  res.json({ task: "testcases", response: response.response });
 });
 
 router.post("/debug", async (req, res) => {
@@ -277,7 +281,7 @@ Now, respond as a thoughtful tutor who helps the user reason through debugging â
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "debug", response });
+  res.json({ task: "debug", response: response.response });
 });
 
 router.post("/refactor", async (req, res) => {
@@ -328,7 +332,7 @@ Now, respond as a thoughtful tutor who helps the user systematically improve the
   ];
   memoryStore.set(key, newHistory);
 
-  res.json({ task: "refactor", response });
+  res.json({ task: "refactor", response: response.response });
 });
 
 export default router;
