@@ -14,12 +14,14 @@ import * as Y from "yjs"
 import { RoomPayload } from "../../../../collaboration-service/src/model/room";
 import Spinner from "@/components/Spinner";
 import { useMatch } from "@/contexts/MatchContext";
+import { useRouter } from "next/router";
 
 let socket: Socket;
 
 export default function CollaborationPage() {
     const { user } = useUser();
     const { matchedUser } = useMatch();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
     const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor>(null);
@@ -27,7 +29,9 @@ export default function CollaborationPage() {
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     
     const [codespace, setCodespace] = useState<Y.Doc | null>(null);
+    const [countdown, setCountdown] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isClosing, setIsClosing] = useState(false);
     const [isEditorReady, setIsEditorReady] = useState(false);
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
@@ -50,21 +54,62 @@ export default function CollaborationPage() {
             setMessages(prev => [...prev, [senderId, message]]);
         });
 
+        socket.on("session-closing-start", ({ countdown }) => {
+            setIsClosing(true);
+            setCountdown(countdown);
+        })
+
+        socket.on("session-countdown-tick", ({ countdown }) => {
+            setCountdown(countdown);
+        })
+
+        socket.on("session-closing-cancelled", () => {
+            setIsClosing(false);
+            setCountdown(null);
+        })
+
+        socket.on("session-ended", () => {
+            console.log("[Socket.IO] Session closed by server");
+
+            if (providerRef.current) {
+                providerRef.current.destroy();
+                providerRef.current = null;
+            }
+
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+
+            socket.disconnect();
+
+            setIsClosing(false);
+            setCountdown(null);
+            setCodespace(null);
+            setRoomData(undefined);
+            setMessages([]);
+
+            alert("Session closed");
+            router.push('/');
+        })
+
         socket.on("disconnect", () => {
             console.log("[Socket.IO] Disconnected");
         });
 
         return () => {
-            socket.disconnect();
             socket.off("receive-message");
+            socket.off("session-closing-start");
+            socket.off("session-countdown-tick");
+            socket.off("session-closing-cancelled");
+            socket.off("session-ended");
+            socket.disconnect();
         };
     }, []);
 
     // UseEffect to create room when both users are ready
     useEffect(() => {
         if (!user || !matchedUser || !roomId) return;
-
-        let isMounted = true;
         
         const poll = async () => {
             try {
@@ -112,7 +157,6 @@ export default function CollaborationPage() {
         pollIntervalRef.current = setInterval(() => poll(), 1000);
 
         return () => {
-            isMounted = false;
             if (pollIntervalRef.current) {
                 clearInterval(pollIntervalRef.current);
                 pollIntervalRef.current = null;
@@ -201,6 +245,18 @@ export default function CollaborationPage() {
         setMessageInput("");
     }
 
+    const handleClose = () => {
+        if (!isClosing) {
+            if (confirm("Do you want to close the session in 1 minute?")) {
+                socket.emit("session-closing-request", { roomId });
+            }
+        } else {
+            if (confirm("Cancel session closure?")) {
+                socket.emit("session-cancel-closing", { roomId });
+            }
+        }
+    }
+
     if (error) return <div>Error: {error}</div>;
     if (!roomData || !isRoomCreated) return <Spinner size="lg" fullScreen={true} />;
 
@@ -220,6 +276,12 @@ export default function CollaborationPage() {
                 <p className="p-1 border-1 border-white rounded ml-1">
                     { (matchedUser?.displayName === undefined) ? "Matched User" : matchedUser.displayName }
                 </p>
+                <button
+                    className={`p-1 ml-2 border-2 border-black rounded text-white ${(isClosing) ? "bg-red-200" : "bg-red-600"}`}
+                    onClick={ () => handleClose() }
+                >
+                    {(isClosing) ? `Cancel? (${countdown})` : "End Session"}
+                </button>
             </div>
 
             <div className="flex flex-1">
