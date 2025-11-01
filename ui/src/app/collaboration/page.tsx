@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { io, Socket } from "socket.io-client";
 import { Editor } from "@monaco-editor/react";
@@ -14,7 +14,6 @@ import * as Y from "yjs"
 import { RoomPayload } from "../../../../collaboration-service/src/model/room";
 import Spinner from "@/components/Spinner";
 import { useMatch } from "@/contexts/MatchContext";
-import { useRouter } from "next/router";
 
 let socket: Socket;
 
