@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.UI_BASE_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -18,7 +18,7 @@ app.use(express.json());
 app.use("/api/question", questionRouter);
 
 app.get("/", (req: Request, res: Response) => {
-    res.send("Question Service is running!");
+  res.send("Question Service is running!");
 });
 
 export default app;
