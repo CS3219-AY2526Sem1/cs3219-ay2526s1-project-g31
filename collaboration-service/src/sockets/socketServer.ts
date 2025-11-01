@@ -20,8 +20,13 @@ export function initializeSocketServer(server: any) {
     io.on("connection", (socket) => {
         console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
-        socket.on("message", ({ senderId, message }: { senderId: string; message: string }) => {
-            io.emit("receive-message", { senderId, message });
+        socket.on("join-room", ({ roomId }) => {
+            if (!roomId) return;
+            socket.join(roomId);
+        })
+
+        socket.on("message", ({ roomId, senderId, message }: { roomId: string, senderId: string; message: string }) => {
+            io.to(roomId).emit("receive-message", { senderId, message });
         });
 
         socket.on("session-closing-request", ({ roomId }) => {

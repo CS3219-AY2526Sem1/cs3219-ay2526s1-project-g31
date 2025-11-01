@@ -64,6 +64,7 @@ export default function CollaborationPage() {
         });
 
         socket.on("session-closing-start", ({ countdown }) => {
+            console.log(`Request received: ${countdown}`);
             setIsClosing(true);
             setCountdown(countdown);
         })
@@ -78,7 +79,21 @@ export default function CollaborationPage() {
         })
 
         socket.on("session-ended", () => {
-            console.log("[Socket.IO] Session closed by server");
+            const removeFromCollection = async () => {
+                try {
+                    const res = await fetch(`http://localhost:3004/api/roomSetup/close/${roomId}`);
+
+                    if (!res.ok) {
+                        console.error("Failed to end session");
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Error closing session:", err);
+                    setError('Failed to close session');
+                }
+            }
+
+            removeFromCollection();
 
             if (providerRef.current) {
                 providerRef.current.destroy();
@@ -98,6 +113,7 @@ export default function CollaborationPage() {
             setRoomData(undefined);
             setMessages([]);
 
+            console.log("[Socket.IO] Session closed by server");
             alert("Session closed");
             router.push('/');
         })
@@ -153,6 +169,8 @@ export default function CollaborationPage() {
 
                     const roomData = await roomRes.json();
                     setRoomData(roomData.newRoom);
+
+                    socket.emit("join-room", { roomId });
 
                     console.log(`[Collaboration Page] Room created: ${roomData.newRoom.roomId}`);
                     setIsRoomCreated(true);
@@ -246,9 +264,9 @@ export default function CollaborationPage() {
      */
     const sendMessage = (senderId: string | undefined, message: string) => {
         if (senderId === undefined) {
-            socket.emit("message", { senderId: "", message: "Failed to send message" });
+            socket.emit("message", { roomId, senderId: "", message: "Failed to send message" });
         } else {
-            socket.emit("message", { senderId, message })
+            socket.emit("message", { roomId, senderId, message })
         }
         
         setMessageInput("");
@@ -260,6 +278,7 @@ export default function CollaborationPage() {
     const handleClose = () => {
         if (!isClosing) {
             if (confirm("Do you want to close the session in 1 minute?")) {
+                console.log(roomId);
                 socket.emit("session-closing-request", { roomId });
             }
         } else {
@@ -330,10 +349,10 @@ export default function CollaborationPage() {
                     { (matchedUser?.displayName === undefined) ? "Matched User" : matchedUser.displayName }
                 </p>
                 <button
-                    className={`p-1 ml-2 border-2 border-black rounded text-white ${(isClosing) ? "bg-red-200" : "bg-red-600"}`}
+                    className={`p-1 ml-2 border-2 border-black rounded text-white ${(isClosing) ? "bg-red-500" : "bg-red-600"}`}
                     onClick={ () => handleClose() }
                 >
-                    {(isClosing) ? `Cancel? (${countdown})` : "End Session"}
+                    {(isClosing) ? `Cancel? (${countdown}s)` : "End Session"}
                 </button>
             </div>
 

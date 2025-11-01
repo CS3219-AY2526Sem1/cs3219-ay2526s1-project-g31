@@ -1,7 +1,6 @@
 import express from 'express';
 import * as Y from "yjs";
 import { Question, User } from 'shared';
-import { PublicUser } from 'src/model/publicUser';
 import { RoomPayload } from 'src/model/room';
 
 const router = express.Router();
@@ -62,6 +61,13 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
     }
 });
 
+router.post("/close/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    delete rooms[roomId];
+    delete docs[roomId];
+    res.json({ success: true });
+});
+
 /**
  * Sets the ready status of the current user to be true.
  */
@@ -89,6 +95,7 @@ router.get("/users/:userId/:matchedUserId", (req, res) => {
     const pairKey = [userId, matchedUserId].sort().join("_");
     const readySet = readyUsers[pairKey] || new Set();
     const bothReady = readySet.size === 2;
+    //if (bothReady) delete readyUsers[pairKey];
     res.json({ bothReady });
 });
 
