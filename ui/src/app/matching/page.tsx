@@ -136,10 +136,24 @@ export default function MatchingPage() {
         setError(null);
     };
 
-    const handleJoinRoom = () => {
-        if (matchedUser) {
-            router.push(`/collaboration`);
+    const handleJoinRoom = async () => {
+        if (!user || !matchedUser) return;
+
+        console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
+
+        try {
+            await fetch("http://localhost:3004/api/roomSetup/me", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user: user, matchedUser: matchedUser }),
+            });
+        } catch (err) {
+            console.error("Error notifying user readiness:", err);
+            setError("Failed to set user readiness");
         }
+
+        const roomId = [user.id, matchedUser.userId].sort().join("_");
+        router.push(`/collaboration?roomId=${roomId}`);
     };
 
     if (isMatching) {
@@ -229,6 +243,7 @@ export default function MatchingPage() {
                                 Find Another Match
                             </button>
                         </div>
+
                     </div>
                 </div>
             </div>
