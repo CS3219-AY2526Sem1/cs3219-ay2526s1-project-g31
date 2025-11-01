@@ -63,8 +63,12 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
 
 router.post("/close/:roomId", (req, res) => {
     const { roomId } = req.params;
+
     delete rooms[roomId];
     delete docs[roomId];
+    delete readyUsers[roomId];
+    mutex.delete(roomId);
+
     res.json({ success: true });
 });
 

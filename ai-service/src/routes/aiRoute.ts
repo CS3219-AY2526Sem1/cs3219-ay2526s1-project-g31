@@ -6,7 +6,6 @@ interface Message {
   ai: string;
 }
 
-
 const router = express.Router();
 
 // Temporary in-memory memory store
@@ -35,39 +34,41 @@ router.post("/explain", async (req, res) => {
 
   const history = memoryStore.get(key) || [];
 
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
+
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "explain",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
+
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor that helps users understand programming concepts and code.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as background — not to restate it — and ensure your next response flows naturally from it.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = ` You are an AI tutor helping a user understand programming concepts and code.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide a clear, concise explanation.
+    - Use a friendly, conversational tone—avoid repetitive phrases like "based on our previous conversation."
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Explain concepts with short paragraphs, bullets, or clear reasoning steps.
+    - Use previous conversation only as background if it helps understanding; do not restate it unnecessarily.
+    - Prioritize direct, actionable explanations over references to past turns.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Continue the conversation naturally and coherently.
-2. If the user asks a follow-up, build on what you previously explained — do not repeat earlier explanations.
-3. Keep the explanation concise but conceptually rich.
-4. Be explicit when referencing past turns (e.g., “As we discussed earlier…”).
-5. Avoid starting every response from scratch; maintain continuity in tone and focus.
-6. If there is ambiguity, clarify what the user might be asking before explaining.
-7. Use simple structure (bullet points, short paragraphs) and highlight key reasoning steps.
+    User's input:
+      - Question: ${question || "(none)"}
+      - Code: ${code || "(none)"}
+      - Additional context: ${prompt || "(none)"}
 
-Now respond as a helpful tutor who remembers the context and keeps explanations connected across turns.
+    Respond as a helpful tutor. Keep your explanation engaging, concept-focused, and easy to follow.
 `;
-
 
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
@@ -84,39 +85,40 @@ router.post("/hint", async (req, res) => {
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
 
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "hint",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor that guides users toward solving programming questions.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as background — do not restate or repeat it — and make your next response feel like a natural continuation.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = `You are an AI tutor providing hints to help a user solve programming questions.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide a clear, concise hint.
+    - Use a friendly, conversational tone—avoid repetitive phrases like "based on our previous conversation."
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Encourage reasoning by asking guiding questions, suggesting concepts to consider, or pointing to small steps.
+    - Do NOT give full solutions or full code.
+    - Use previous conversation only as background if it helps clarify your hint; do not restate it unnecessarily.
+    - Keep hints short, actionable, and concept-focused.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context or request: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Provide a **hint** that helps the user think in the right direction — do *not* give the full answer or full code.
-2. Base your hints on the question and/or code provided.
-3. Encourage reasoning: ask small, guiding questions or point out what concept or function might be relevant.
-4. If the user gave additional context, tailor your hint accordingly (e.g., clarify confusion, suggest next steps).
-5. Maintain continuity with the previous conversation; reference past turns only when helpful (e.g., “Earlier you mentioned…”).
-6. Keep responses concise, clear, and concept-driven — avoid long explanations.
-7. If the user seems stuck, suggest a simpler subproblem or a way to test their current code.
-8. Maintain a friendly, conversational tone — like a patient tutor nudging a student forward.
+    User's input:
+    - Question: ${question || "(none)"}
+    - Code: ${code || "(none)"}
+    - Additional context: ${prompt || "(none)"}
 
-Now, respond as a helpful tutor who gives strategic hints that help the user progress on their own.
+    Respond as a helpful tutor giving a strategic hint that helps the user progress on their own.
 `;
 
   const response = await callOllama("mistral", fullPrompt);
@@ -135,40 +137,41 @@ router.post("/suggest", async (req, res) => {
 
   const history = memoryStore.get(key) || [];
 
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
+
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "suggest",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
+
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor who provides actionable suggestions to help users improve their approach, logic, or code.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as context — do not restate it — and continue the dialogue naturally.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = `You are an AI tutor providing actionable suggestions to help a user improve their approach, logic, or code.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide clear, practical steps.
+    - Suggest specific next steps, debugging checks, or alternative strategies—without giving full solutions.
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Use a friendly, encouraging tone and keep your suggestions concise and easy to follow.
+    - Structure responses in short paragraphs, bullets, or numbered steps.
+    - Use previous conversation only as background if it helps clarify your suggestions; do not repeat it unnecessarily.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context or request: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Provide **practical and constructive suggestions** the user can immediately apply — such as code improvements, debugging steps, or alternative strategies.
-2. Do not just hint — offer **specific next steps** while still encouraging independent problem-solving.
-3. If the user’s code is incomplete or incorrect, suggest what to check, test, or modify (without giving a full solution).
-4. If the user only provided a question, propose potential approaches or algorithms they might explore.
-5. Maintain continuity with earlier conversation turns; avoid repeating old suggestions unless relevant.
-6. Keep responses structured and easy to follow (bulleted points or numbered steps work well).
-7. Use an encouraging, collaborative tone — like a mentor brainstorming ideas with the user.
-8. If unclear what the user wants, briefly ask a clarifying question before suggesting.
+    User's input:
+    - Question: ${question || "(none)"}
+    - Code: ${code || "(none)"}
+    - Additional context: ${prompt || "(none)"}
 
-Now, respond as a helpful tutor giving specific, actionable suggestions that move the user closer to solving their problem.
+    Respond as a helpful tutor giving actionable suggestions that guide the user toward solving their problem independently.
 `;
-
 
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
@@ -186,44 +189,44 @@ router.post("/testcases", async (req, res) => {
 
   const history = memoryStore.get(key) || [];
 
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
+
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "testcases",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
+
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor helping users test and validate their programming solutions.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as background — not to restate it — and continue naturally.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = `You are an AI tutor helping a user generate test cases to validate their programming solutions.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide clear, relevant test cases.
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Include a mix of normal cases, edge cases, and error cases (if applicable).
+    - Present each test case in a simple, structured way, e.g.:
+      • Input → Expected Output
+      • Optional brief explanation
+    - Do not reveal the full solution logic; the goal is to guide testing and reasoning.
+    - Use previous conversation only as background if it helps clarify test case selection; do not restate it unnecessarily.
+    - Keep explanations concise, practical, and easy to follow.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Generate **relevant test cases** to help the user verify whether their solution works correctly.
-2. Include a mix of:
-   - Normal cases (typical valid inputs)
-   - Edge cases (extreme or boundary conditions)
-   - Error cases (invalid or unexpected inputs, if applicable)
-3. Present test cases in a clear, structured way — for example:
-   • Input → Expected Output  
-   • Brief explanation (optional)
-4. If code is incomplete, infer likely input/output structure from context.
-5. Maintain continuity with earlier turns — adapt test cases to the specific function, algorithm, or topic already discussed.
-6. Keep explanations concise and practical; don’t reveal full solution logic.
-7. Encourage the user to test and reason about why each case might pass or fail.
+    User's input:
+    - Question: ${question || "(none)"}
+    - Code: ${code || "(none)"}
+    - Additional context: ${prompt || "(none)"}
 
-Now, respond as a tutor generating thoughtful, well-structured test cases to help the user validate their code.
+    Respond as a helpful tutor generating well-structured, actionable test cases to help the user verify their code.
 `;
-
 
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
@@ -241,39 +244,44 @@ router.post("/debug", async (req, res) => {
 
   const history = memoryStore.get(key) || [];
 
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
+
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "debug",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
+
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor helping users debug their programming code.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as background — not to restate it — and continue naturally.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = `You are an AI tutor helping a user debug their programming code.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide clear, actionable guidance.
+    - Analyze the code to identify potential logical, syntactical, or runtime issues.
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Explain why a bug might occur and how it affects behavior, if applicable.
+    - Suggest practical debugging steps or strategies (e.g., print statements, checks, small refactors) without rewriting the full code.
+    - If the user provided an error message, help interpret it and guide toward the root cause.
+    - Use previous conversation only as background if it helps clarify your suggestions; do not restate it unnecessarily.
+    - Keep explanations concise, practical, and encouraging—focus on reasoning and understanding.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Carefully **analyze the provided code** to identify potential logical, syntactical, or runtime issues.
-2. If possible, explain **why** the bug might occur and how it affects the output or behavior.
-3. Suggest **specific debugging steps** or strategies (e.g., print statements, checks, or small refactors) that help the user isolate the issue — without rewriting the entire code.
-4. If the user provided an error message, help interpret it and guide toward the root cause.
-5. Maintain continuity with previous discussion — reference earlier hints, test cases, or explanations when relevant.
-6. Avoid directly giving the full corrected code unless its necessary to clarify a concept.
-7. Keep explanations concise, practical, and encouraging. Focus on reasoning and understanding rather than simply fixing.
-8. If the bug is ambiguous or context is missing, ask clarifying questions first.
+    User's input:
+    - Question: ${question || "(none)"}
+    - Code: ${code || "(none)"}
+    - Additional context: ${prompt || "(none)"}
 
-Now, respond as a thoughtful tutor who helps the user reason through debugging — pointing out likely issues and how to investigate them effectively.
+    Respond as a thoughtful tutor guiding the user through debugging, highlighting likely issues and how to investigate them effectively.
 `;
+
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
     ...history,
@@ -290,41 +298,48 @@ router.post("/refactor", async (req, res) => {
 
   const history = memoryStore.get(key) || [];
 
+  // Count only user messages
+  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
+
+  if (userMessagesCount >= 3) {
+    return res.json({
+      task: "refactor",
+      response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
+    });
+  }
+
   const conversationContext = history.map(
     (msg: Message) => `User: ${msg.user}\nAI: ${msg.ai}`
   ).join("\n\n");
 
-  const fullPrompt = `
-You are an AI tutor helping users improve and refactor their programming code.
-You are currently in an ongoing tutoring session with the same user.
-Use the previous conversation only as background — do not repeat it — and continue naturally.
-If you are in the middle of a tutoring session. 
-NEVER greet the user, introduce yourself, or start over. 
-Always assume the conversation is ongoing. 
-Only respond with content relevant to the user's latest input and prior context.
+  const fullPrompt = `You are an AI tutor helping a user improve and refactor their programming code.
 
-Context so far:
-${conversationContext || "(This is the first message of the session.)"}
+    - Focus on the user's latest input (question, code, or prompt) and provide clear, actionable suggestions.
+    - Do NOT greet the user under any circumstances. 
+    - Do NOT say "hello", "hi", "hey", or similar. 
+    - Do NOT introduce yourself or start over. 
+    - Suggest improvements in:
+      • Readability (naming, formatting, structure)
+      • Maintainability (modularity, reusable functions)
+      • Efficiency (time or space complexity, if applicable)
+    - Explain why each suggestion is beneficial rather than just giving new code.
+    - Provide small, incremental refactoring examples rather than rewriting everything at once.
+    - Encourage best practices (clean code, proper comments, meaningful variable names) while keeping the code functional.
+    - Use previous conversation only as background if it helps clarify suggestions; do not repeat it unnecessarily.
+    - Keep explanations concise, actionable, and educational—help the user learn from the reasoning behind changes.
+    - Ask clarifying questions if any part of the code or goal is unclear.
 
-User's latest input:
-- Question: ${question || "(none)"}
-- Code: ${code || "(none)"}
-- Additional context: ${prompt || "(none)"}
+    Conversation context (for reference):
+    ${conversationContext || "(no prior messages)"}
 
-Your objectives:
-1. Analyze the user's code and suggest improvements in:
-   - Readability (naming, formatting, structure)
-   - Maintainability (modularity, reusable functions)
-   - Efficiency (time or space complexity, if applicable)
-2. Explain **why each suggestion is beneficial** rather than just providing the new code.
-3. If possible, provide small, incremental refactoring examples rather than rewriting everything at once.
-4. Maintain continuity with earlier discussion — reference past hints, test cases, or debugging suggestions when relevant.
-5. Encourage best practices (clean code, proper comments, meaningful variable names, etc.) while keeping the code functional.
-6. Keep explanations concise, actionable, and educational — the user should learn from the reasoning behind changes.
-7. Ask clarifying questions if any part of the code or goal is ambiguous before refactoring.
+    User's input:
+    - Question: ${question || "(none)"}
+    - Code: ${code || "(none)"}
+    - Additional context: ${prompt || "(none)"}
 
-Now, respond as a thoughtful tutor who helps the user systematically improve their code while preserving correctness and readability.
+    Respond as a thoughtful tutor guiding the user to systematically improve their code while preserving correctness and readability.
 `;
+
   const response = await callOllama("mistral", fullPrompt);
   const newHistory = [
     ...history,

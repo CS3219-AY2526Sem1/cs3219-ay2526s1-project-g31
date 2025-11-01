@@ -32,6 +32,7 @@ export default function CollaborationPage() {
     const [isEditorReady, setIsEditorReady] = useState(false);
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
+    const [userClosed, setUserClosed] = useState<string | null>(null);
     const [messages, setMessages] = useState<[string, string][]>([]);
     const [messageInput, setMessageInput] = useState<string>("");
     const [roomData, setRoomData] = useState<RoomPayload>();
@@ -63,25 +64,38 @@ export default function CollaborationPage() {
             setMessages(prev => [...prev, [senderId, message]]);
         });
 
-        socket.on("session-closing-start", ({ countdown }) => {
-            console.log(`Request received: ${countdown}`);
+        socket.on("session-closing-start", ({ countdown, closedBy }) => {
             setIsClosing(true);
             setCountdown(countdown);
+
+            if (user?.id !== closedBy) alert("Your partner requested to end the session");
+
+            if (editorRef.current) editorRef.current.updateOptions({ readOnly: true });
         })
 
         socket.on("session-countdown-tick", ({ countdown }) => {
             setCountdown(countdown);
         })
 
-        socket.on("session-closing-cancelled", () => {
+        socket.on("session-closing-cancelled", ({ closedBy }) => {
             setIsClosing(false);
             setCountdown(null);
+
+            if (user?.id !== closedBy) alert("Your partner requested to resume the session");
+
+            if (editorRef.current) editorRef.current.updateOptions({ readOnly: false });
         })
+
+        socket.on("ai-message", ({ senderId, message }: { senderId: string; message: string }) => {
+            setAiMessages(prev => [...prev, [senderId, message]]);
+        });
 
         socket.on("session-ended", () => {
             const removeFromCollection = async () => {
                 try {
-                    const res = await fetch(`http://localhost:3004/api/roomSetup/close/${roomId}`);
+                    const res = await fetch(`http://localhost:3004/api/roomSetup/close/${roomId}`,{
+                        method: "POST",
+                    });
 
                     if (!res.ok) {
                         console.error("Failed to end session");
@@ -123,6 +137,7 @@ export default function CollaborationPage() {
         });
 
         return () => {
+            socket.off("ai-message");
             socket.off("receive-message");
             socket.off("session-closing-start");
             socket.off("session-countdown-tick");
@@ -278,12 +293,18 @@ export default function CollaborationPage() {
     const handleClose = () => {
         if (!isClosing) {
             if (confirm("Do you want to close the session in 1 minute?")) {
-                console.log(roomId);
-                socket.emit("session-closing-request", { roomId });
+                if (user?.id !== undefined) {
+                    setUserClosed(user.id);
+                    socket.emit("session-closing-request", { roomId, userId: user.id });
+                }
+                
             }
         } else {
-            if (confirm("Cancel session closure?")) {
-                socket.emit("session-cancel-closing", { roomId });
+            if (userClosed !== null && confirm("Cancel session closure?")) {
+                if (user?.id !== undefined) {
+                    setUserClosed(null);
+                    socket.emit("session-cancel-closing", { roomId, userId: user.id });
+                }   
             }
         }
     }
@@ -292,41 +313,23 @@ export default function CollaborationPage() {
      * Sends a user prompt to the AI service.
      */
     const sendAiMessage = async () => {
-        if (!user || !roomData || !aiInput.trim()) return; // Ensure user and question exist
+        if (!user || !roomData || !editorRef.current || !aiInput.trim()) return;
         setIsSendingAiMessage(true);
 
-        // Get code from editor if any
-        const code = editorRef.current?.getValue() ?? "";
+        const code = editorRef.current.getValue(); 
+        const userPrompt = aiInput;
 
-        setAiMessages(prev => [...prev, [user.displayName ?? "You", aiInput]]);
+        socket.emit("ai-message", {
+            roomId,
+            senderId: user.displayName ?? user.id,
+            message: userPrompt,
+            type: "user-prompt",
+            code
+        });
 
-        try {
-            const res = await fetch(`http://localhost:3005/api/ai/${aiMode}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    question: `${roomData.question.title}\n\n${roomData.question.description}`, // title + description
-                    code: code || "",
-                    prompt: aiInput,
-                    session_id: user.id
-                })
-            });
-
-            const data = await res.json();
-
-            // Add AI response to chat
-            if (data.response) {
-                setAiMessages(prev => [...prev, ["AI", data.response]]);
-            } else {
-                setAiMessages(prev => [...prev, ["AI", "No response from AI"]]);
-            }
-        } catch (err) {
-            console.error(err);
-            setAiMessages(prev => [...prev, ["AI", "Failed to get response from AI"]]);
-        } finally {
-            setMessageInput("");
-            setIsSendingAiMessage(false);
-        }
+        // Clear input locally
+        setAiInput("");
+        setIsSendingAiMessage(false);
     };
 
     if (error) return <div>Error: {error}</div>;
@@ -352,7 +355,7 @@ export default function CollaborationPage() {
                     className={`p-1 ml-2 border-2 border-black rounded text-white ${(isClosing) ? "bg-red-500" : "bg-red-600"}`}
                     onClick={ () => handleClose() }
                 >
-                    {(isClosing) ? `Cancel? (${countdown}s)` : "End Session"}
+                    {(isClosing) ? (userClosed === null) ? `${countdown}s` : `Cancel? (${countdown}s)` : "End Session"}
                 </button>
             </div>
 
@@ -451,16 +454,25 @@ export default function CollaborationPage() {
 
                     {/* Messages container */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {aiMessages.map(([sender, msg], idx) => (
-                            <p
-                                key={idx}
-                                className={`text-sm ${sender === "AI" ? "text-yellow-400" : "text-blue-500"
-                                    }`}
-                            >
-                                <strong>{sender}:</strong> {msg}
-                            </p>
-                        ))}
+                        {aiMessages.map(([sender, msg], idx) => {
+                            let textColor = "text-white";
+
+                            if (sender === "AI") {
+                                textColor = "text-yellow-400"; // AI responses
+                            } else if (sender === user?.displayName) {
+                                textColor = "text-blue-400"; // Current user's prompts
+                            } else if (sender === matchedUser?.displayName) {
+                                textColor = "text-green-400"; // Matched user's prompts
+                            }
+
+                            return (
+                                <p key={idx} className={`text-sm ${textColor}`}>
+                                    <strong>{sender}:</strong> {msg}
+                                </p>
+                            );
+                        })}
                     </div>
+
 
                     {/* Input + mode selector */}
                     <div className="p-4 border-t border-gray-700 flex flex-col space-y-2">
@@ -501,17 +513,34 @@ export default function CollaborationPage() {
                 {/**
                  * Code Space Editor
                  */}
-                <div className="flex flex-1 bg-orange-400 p-5">
-                    <Editor
-                        height="100%"
-                        width="100%"
-                        theme="vs-dark"
-                        options={{ padding: { top: 20, bottom: 20 } }}
-                        onMount={(editor) => { 
-                            editorRef.current = editor;
-                            setIsEditorReady(true);
-                        }}
-                    />
+                <div className="flex flex-1 flex-col bg-orange-400 p-5 overflow-hidden">
+                    <div className="flex-1 min-h-0 relative">
+                        <Editor
+                            className="h-full"
+                            width="100%"
+                            theme="vs-dark"
+                            options={{
+                                padding: { top: 20, bottom: 20 },
+                                readOnly: isClosing
+                            }}
+                            onMount={(editor) => { 
+                                editorRef.current = editor;
+                                setIsEditorReady(true);
+
+                                const resizeObserver = new ResizeObserver(() => editor.layout());
+                                resizeObserver.observe(editor.getDomNode()!);
+
+                                return () => resizeObserver.disconnect();
+                            }}
+                        />
+                    </div>
+                    
+
+                    {isClosing && (
+                        <div className="mt-2 bg-gray-800 text-white text-center py-2 rounded shadow-lg transition-all duration-300">
+                            Session ending in {countdown ?? 60}s... editor locked
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

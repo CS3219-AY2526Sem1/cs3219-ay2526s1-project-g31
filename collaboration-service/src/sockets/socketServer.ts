@@ -29,11 +29,66 @@ export function initializeSocketServer(server: any) {
             io.to(roomId).emit("receive-message", { senderId, message });
         });
 
-        socket.on("session-closing-request", ({ roomId }) => {
+        // Handle AI message events
+        socket.on("ai-message", async (data: { 
+            roomId: string; 
+            senderId: string; 
+            message: string; 
+            type: string; 
+            code?: string; 
+        }) => {
+            const { roomId, senderId, message, type, code } = data;
+
+            if (!roomId) {
+                console.warn(`[Socket.IO] Missing roomId for message from ${senderId}`);
+                return;
+            }
+
+            if (type === "user-prompt") {
+                // Broadcast user's prompt to everyone in the room
+                io.to(roomId).emit("ai-message", { senderId, message, type });
+
+                try {
+                    // Call your AI backend API
+                    const res = await fetch("http://localhost:3005/api/ai/default", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            question: message,
+                            code: code || "",
+                            session_id: senderId,
+                        }),
+                    });
+
+                    const result = await res.json();
+                    const aiResponse = result.response || "No response from AI";
+
+                    // Broadcast AI's response to the same room
+                    io.to(roomId).emit("ai-message", {
+                        roomId,
+                        senderId: "AI",
+                        message: aiResponse,
+                        type: "ai-response",
+                    });
+
+                } catch (error) {
+                    console.error("[Socket.IO] AI service error:", error);
+
+                    io.to(roomId).emit("ai-message", {
+                        roomId,
+                        senderId: "AI",
+                        message: "Failed to get response from AI service.",
+                        type: "ai-response",
+                    });
+                }
+            }
+        });
+
+        socket.on("session-closing-request", ({ roomId, userId }) => {
             if (activeClosures.has(roomId)) return;
 
             let countdown = 60;
-            io.to(roomId).emit("session-closing-start", { countdown });
+            io.to(roomId).emit("session-closing-start", { countdown, closedBy: userId });
 
             const interval = setInterval(() => {
                 countdown--;
@@ -50,12 +105,12 @@ export function initializeSocketServer(server: any) {
             activeClosures.set(roomId, interval);
         })
 
-        socket.on("session-cancel-closing", ({ roomId }) => {
+        socket.on("session-cancel-closing", ({ roomId, userId }) => {
             const timer = activeClosures.get(roomId);
             if (timer) {
                 clearInterval(timer);
                 activeClosures.delete(roomId);
-                io.to(roomId).emit("session-closing-cancelled");
+                io.to(roomId).emit("session-closing-cancelled", { closedBy: userId });
                 console.log(`Room ${roomId} closure cancelled`);
             }
         })
