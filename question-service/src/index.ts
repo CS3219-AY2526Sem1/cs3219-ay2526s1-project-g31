@@ -9,7 +9,7 @@ import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 
 const prisma = new PrismaClient();
-const PORT = process.env.QUESTION_SERVICE_PORT || 3003;
+const PORT = process.env.QUESTION_SERVICE_PORT!;
 
 async function seedIfNeeded() {
   const count = await prisma.question.count();
