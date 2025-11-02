@@ -9,18 +9,26 @@ services:
       - ./ui/.env
     ports:
       - "3000:3000"
-    depends_on:
-      - user-service
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: api-gateway:latest
+    env_file:
+      - ./.env.production.local
+    ports:
+      - "4000:4000"
+    networks:
+      - peerprep
   user-service:
     build:
       context: .
       dockerfile: user-service/Dockerfile
     image: user-service:latest
+    hostname: "user-service"
     env_file:
       - ./user-service/.env.production.local
-      - ./.env
-    ports:
-      - "3001:3001"
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -30,11 +38,10 @@ services:
       context: .
       dockerfile: matching-service/Dockerfile
     image: matching-service:latest
+    hostname: "matching-service"
     env_file:
       - ./matching-service/.env.production.local
-      - ./.env
-    ports:
-      - "3002:3002"
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -44,11 +51,10 @@ services:
       context: .
       dockerfile: question-service/Dockerfile
     image: question-service:latest
+    hostname: "question-service"
     env_file:
       - ./question-service/.env.production.local
-      - ./.env
-    ports:
-      - "3003:3003"
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
@@ -58,15 +64,14 @@ services:
       context: .
       dockerfile: collaboration-service/Dockerfile
     image: collaboration-service:latest
+    hostname: "collaboration-service"
     env_file:
       - ./collaboration-service/.env.production.local
-      - ./.env
-    ports:
-      - "3004:3004"
+      - ./.env.production.local
     networks:
       - peerprep
     depends_on:
-      - redis
+      - mongo-init
   redis:
     image: redis:latest
     hostname: "redis"
@@ -78,7 +83,7 @@ services:
   mongo:
     image: mongo
     hostname: "mongo"
-    command: "mongod --replSet rs0 --bind_ip_all --port 27017"
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
     volumes:
       - ./db/mongo_data_build:/data/db
     networks:

@@ -9,6 +9,7 @@ import Image from "next/image";
 import Spinner from "@/components/Spinner";
 import Header from "@/components/Header";
 import { difficulty as d, topic as t, language as l } from "@/constants/question";
+import { io, Socket } from "socket.io-client";
 
 const Difficulty = { ...d, ANY: 'Any' };
 const Topic = { ...t, ANY: 'Any' };
@@ -16,7 +17,7 @@ const Language = { ...l, ANY: 'Any' };
 
 export default function MatchingPage() {
     const { user } = useUser();
-    const { accessToken } = useAuth();
+    const { accessToken, authFetch } = useAuth();
     const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
     const router = useRouter();
 
@@ -26,14 +27,14 @@ export default function MatchingPage() {
     const [isMatching, setIsMatching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const wsRef = useRef<WebSocket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
         return () => {
-            // Cleanup WebSocket on unmount
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
+            // Cleanup socket on unmount
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
             }
         };
     }, []);
@@ -49,19 +50,20 @@ export default function MatchingPage() {
         clearMatchedUser();
 
         try {
-            const ws = new WebSocket(`ws://localhost:3002?token=${accessToken}`);
-            wsRef.current = ws;
+            // Connect to matching service through API Gateway
+            const socket = io(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL, {
+                path: '/socket/matching',
+                auth: {
+                    token: accessToken
+                },
+                transports: ['websocket', 'polling'],
+            });
+            socketRef.current = socket;
 
-            ws.onopen = async () => {
-                console.log('WebSocket connected');
-
+            socket.on('connect', async () => {
                 try {
-                    const response = await fetch('http://localhost:3002/api/match/start', {
+                    const response = await authFetch(`${process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL}/api/match/start`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${accessToken}`
-                        },
                         body: JSON.stringify({
                             userId: user.id,
                             displayName: user.displayName,
@@ -76,73 +78,59 @@ export default function MatchingPage() {
                     if (!response.ok) {
                         throw new Error('Failed to start matching');
                     }
-
-                    console.log('Matching request sent, waiting for match...');
                 } catch (err) {
                     setError(err instanceof Error ? err.message : 'Failed to start matching');
                     setIsMatching(false);
-                    // close socket if still open
-                    if (wsRef.current) {
-                        wsRef.current.close();
-                        wsRef.current = null;
+                    // Disconnect socket if still connected
+                    if (socketRef.current) {
+                        socketRef.current.disconnect();
+                        socketRef.current = null;
                     }
                 }
-            };
+            });
 
-            ws.onmessage = (event) => {
-                console.log('WebSocket message received:', event.data);
-
-                try {
-                    const data = JSON.parse(event.data);
-
-                    // Handle successful match
-                    if (data.type === 'match_found') {
-                        setMatchedUser({
-                            userId: data.userId,
-                            displayName: data.displayName,
-                            email: data.email,
-                            picture: data.picture,
-                            difficulty: data.difficulty,
-                            topic: data.topic,
-                            language: data.language,
-                        });
-                        setIsMatching(false);
-                    }
-                } catch (err) {
-                    console.error('Error parsing WebSocket message:', err);
-                }
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                setError('Connection error occurred');
+            socket.on('match_found', (data) => {
+                setMatchedUser({
+                    userId: data.userId,
+                    displayName: data.displayName,
+                    email: data.email,
+                    picture: data.picture,
+                    difficulty: data.difficulty,
+                    topic: data.topic,
+                    language: data.language,
+                });
                 setIsMatching(false);
-            };
+            });
 
-            ws.onclose = (event) => {
-                console.log('WebSocket closed', { code: event.code, reason: event.reason });
-
-                // Only show error if connection closed unexpectedly during matching
-                if (event.code >= 4000 && event.code <= 4999) {
-                    const reason = event.reason;
-                    setError(`Connection closed: ${reason} (${event.code})`);
-                }
+            socket.on('connect_error', (error) => {
+                console.error('Socket.io connection error:', error);
+                setError(`Connection error: ${error.message}`);
                 setIsMatching(false);
-            };
+            });
+
+            socket.on('disconnect_reason', (data) => {
+                setError(`Disconnected: ${data.reason}`);
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('Socket.io disconnected:', reason);
+                setIsMatching(false);
+            });
 
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             setIsMatching(false);
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
             }
         }
     };
 
     const handleCancelMatching = async () => {
-        if (wsRef.current) {
-            wsRef.current.close();
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
         }
         setIsMatching(false);
         setError(null);

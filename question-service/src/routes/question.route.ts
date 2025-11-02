@@ -1,6 +1,6 @@
 import express from "express";
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient, Topic, Difficulty } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -17,9 +17,12 @@ function validateQuestion(req: Request, res: Response, next: NextFunction) {
 }
 
 // Create a question
-router.post("/", validateQuestion, async (req, res) => {
+router.post(
+  "/",
+  validateQuestion,
+  async (req, res) => {
   try {
-    const { title, description, difficulty, topics, mediaUrls, popularity } = req.body;
+    const { title, description, difficulty, topics, mediaUrls } = req.body;
 
     const question = await prisma.question.create({
       data: {
@@ -28,12 +31,41 @@ router.post("/", validateQuestion, async (req, res) => {
         difficulty,
         topics,
         mediaUrls: mediaUrls || [],
-        popularity: popularity || 0,
       },
     });
 
     res.status(201).json(question);
   } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Update a question
+router.put("/:id",
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, description, difficulty, topics, mediaUrls } = req.body;
+
+    const updated = await prisma.question.update({
+      where: { id },
+      data: { title, description, difficulty, topics, mediaUrls },
+    });
+
+    res.json(updated);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Delete a question
+router.delete("/:id",
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      await prisma.question.delete({ where: { id } });
+      res.json({ success: true });
+    } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });

@@ -1,14 +1,15 @@
 import dotenv from "dotenv";
 import path from "path";
-import app from "./server";
-import { PrismaClient } from "@prisma/client";
-import fs from "fs";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+import app from "./server";
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+
 const prisma = new PrismaClient();
-const PORT = process.env.QUESTION_SERVICE_PORT || 3003;
+const PORT = process.env.QUESTION_SERVICE_PORT!;
 
 async function seedIfNeeded() {
   const count = await prisma.question.count();
