@@ -99,7 +99,6 @@ router.get("/users/:userId/:matchedUserId", (req, res) => {
     const pairKey = [userId, matchedUserId].sort().join("_");
     const readySet = readyUsers[pairKey] || new Set();
     const bothReady = readySet.size === 2;
-    //if (bothReady) delete readyUsers[pairKey];
     res.json({ bothReady });
 });
 

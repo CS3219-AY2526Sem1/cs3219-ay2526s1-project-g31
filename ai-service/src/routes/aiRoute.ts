@@ -29,15 +29,12 @@ async function callOllama(model: string, prompt: string) {
 }
 
 router.post("/explain", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
 
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
-
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "explain",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -81,14 +78,12 @@ router.post("/explain", async (req, res) => {
 });
 
 router.post("/hint", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
 
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "hint",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -132,15 +127,12 @@ router.post("/hint", async (req, res) => {
 });
 
 router.post("/suggest", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
 
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
-
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "suggest",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -184,15 +176,12 @@ router.post("/suggest", async (req, res) => {
 });
 
 router.post("/testcases", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
 
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
-
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "testcases",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -239,15 +228,12 @@ router.post("/testcases", async (req, res) => {
 });
 
 router.post("/debug", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
 
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
-
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "debug",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -293,15 +279,12 @@ router.post("/debug", async (req, res) => {
 });
 
 router.post("/refactor", async (req, res) => {
-  const { question, code, prompt, session_id } = req.body;
+  const { question, code, prompt, session_id, numPrompts } = req.body;
   const key = session_id || "default";
 
   const history = memoryStore.get(key) || [];
 
-  // Count only user messages
-  const userMessagesCount = history.filter((msg: Message) => msg.user).length;
-
-  if (userMessagesCount >= 3) {
+  if (numPrompts <= 0) {
     return res.json({
       task: "refactor",
       response: "Each user can only ask up to 3 questions per collaborative session. You cannot use the AI service anymore."
@@ -348,6 +331,41 @@ router.post("/refactor", async (req, res) => {
   memoryStore.set(key, newHistory);
 
   res.json({ task: "refactor", response: response.response });
+});
+
+router.post("/clear", async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "userIds must be a non-empty array." 
+      });
+    }
+
+    let deletedCount = 0;
+
+    for (const userId of userIds) {
+      if (memoryStore.has(userId)) {
+        memoryStore.delete(userId);
+        deletedCount++;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Cleared data for ${deletedCount} user(s).`,
+      deletedUsers: userIds.filter(id => !memoryStore.has(id))
+    });
+
+  } catch (error: any) {
+    console.error("Error clearing user sessions:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while clearing sessions.",
+    });
+  }
 });
 
 export default router;
