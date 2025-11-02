@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import path from "path";
 import http from "http";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
 
 import app from "./server";
 import { initializeSocketServer } from "./sockets/socketServer";
