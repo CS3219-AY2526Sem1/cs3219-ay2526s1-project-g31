@@ -1,5 +1,4 @@
 import { Question } from "shared";
-import { PublicUser } from "./publicUser";
 
 /**
  * Data of the collaboration room session.

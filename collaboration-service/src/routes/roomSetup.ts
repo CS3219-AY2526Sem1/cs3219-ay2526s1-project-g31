@@ -1,7 +1,6 @@
 import express from 'express';
 import * as Y from "yjs";
 import { Question, User } from 'shared';
-import { PublicUser } from 'src/model/publicUser';
 import { RoomPayload } from 'src/model/room';
 
 const router = express.Router();
@@ -60,6 +59,17 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
     } finally {
         mutex.delete(roomId);
     }
+});
+
+router.post("/close/:roomId", (req, res) => {
+    const { roomId } = req.params;
+
+    delete rooms[roomId];
+    delete docs[roomId];
+    delete readyUsers[roomId];
+    mutex.delete(roomId);
+
+    res.json({ success: true });
 });
 
 /**
