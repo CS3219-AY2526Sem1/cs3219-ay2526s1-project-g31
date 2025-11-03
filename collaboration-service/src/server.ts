@@ -1,18 +1,15 @@
 import express from "express";
-import type { Request, Response } from "express";
-import { RoomPayload } from "./model/room";
+import cors from "cors";
+import roomSetupRouter from "./routes/roomSetup";
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+}))
 
-app.get("/", (req: Request, res: Response) => {
-    res.send("Collaboration Service is running!");
-});
-
-app.post("/api/room/create", (req: Request, res: Response) => {
-    const payload = req.body as RoomPayload;
-    console.log("Room created:", payload.roomId, payload.users);
-    res.status(200).send("Room initialized");
-});
+app.use("/api/roomSetup", roomSetupRouter)
+app.get("/", (req, res) => res.send("Collaboration Service is running!"));
 
 export default app;
