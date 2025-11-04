@@ -35,16 +35,20 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
             return res.status(200).json({ newRoom: rooms[roomId] });
         }
 
-        const dummyQuestion: Question = {
-            id: "question",
-            title: "Dummy Question",
-            description: "A dummy question for testing"
-        };
+        const { difficulty, topic } = req.body;
+
+        const questionServiceUrl = process.env.QUESTION_SERVICE_BASE_URL;
+        const questionRes = await fetch(`${questionServiceUrl}/api/question/random?difficulty=${difficulty}&topic=${topic}`);
+        if (!questionRes.ok) {
+            throw new Error("Failed to fetch question");
+        }
+
+        const question = await questionRes.json();
 
         const newRoom: RoomPayload = {
             roomId,
             userIds: [userId, matchedUserId],
-            question: dummyQuestion,
+            question,
             createdAt: Date.now(),
             lastActiveAt: Date.now(),
         }
