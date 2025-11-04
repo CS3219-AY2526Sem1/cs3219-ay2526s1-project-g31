@@ -435,7 +435,7 @@ export default function CollaborationPage() {
                             {roomData.question.title}
                         </h1>
 
-                        <p className="text-white">
+                        <p className="text-white whitespace-pre-line">
                             {roomData.question.description}
                         </p>
                     </div>
