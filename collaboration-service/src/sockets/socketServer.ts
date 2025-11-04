@@ -1,5 +1,12 @@
-import { count } from "console";
-import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import { Server, Socket } from "socket.io";
+
+interface JwtPayload {
+    userId: string;
+    userRole: string;
+}
+
+const socketClients = new Map<string, Socket>();
 
 /**
  * Server-side of Socket.IO
@@ -7,25 +14,49 @@ import { Server } from "socket.io";
  * @param server Server for collaboration service.
  * @returns Socket.IO to use for collaboration service.
  */
-export function initializeSocketServer(server: any) {
+function initializeSocketServer(server: any) {
+    const activeClosures = new Map();
+
     const io = new Server(server, {
+        path: "/socket/collaboration",
         cors: {
-            origin: "http://localhost:3000",
-            methods: ["GET", "POST"],
+            origin: process.env.UI_BASE_URL,
+            credentials: true,
         },
     });
 
-    const activeClosures = new Map();
+    io.use((socket, next) => {
+        console.log("reached");
+        const token = socket.handshake.auth.token;
+        if (!token) {
+            return next(new Error("Missing token"));
+        }
+
+        try {
+            const { userId, userRole } = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as JwtPayload;
+            if (userId) {
+                if (socketClients.has(userId)) {
+                    return next(new Error("User already connected"));
+                }
+                socket.data.userId = userId;
+                socket.data.userRole = userRole;
+                console.log("Authenticated user:", { userId, userRole });
+                next();
+            } else {
+                return next(new Error("Invalid token payload"));
+            }
+        } catch (err) {
+            return next(new Error("Invalid or expired token"));
+        }
+    });
 
     io.on("connection", (socket) => {
-        console.log(`[Socket.IO] Client connected: ${socket.id}`);
-
-        socket.on("join-room", ({ roomId }) => {
-            if (!roomId) return;
-            socket.join(roomId);
-        })
+        const userId = socket.data.userId;
+        socketClients.set(userId, socket);
+        console.log(`[Socket.IO] Client connected: ${userId}`);
 
         socket.on("message", ({ roomId, senderId, message }: { roomId: string, senderId: string; message: string }) => {
+            console.log("[Socket.IO] Message called");
             io.to(roomId).emit("receive-message", { senderId, message });
         });
 
@@ -40,6 +71,7 @@ export function initializeSocketServer(server: any) {
             aiMode?: string;
             numPrompts: number;
         }) => {
+            console.log("[Socket.IO] AI message called");
             const { roomId, senderId, question, code, prompt, type, aiMode, numPrompts } = data;
 
             if (!roomId) {
@@ -53,7 +85,7 @@ export function initializeSocketServer(server: any) {
 
                 try {
                     // Call your AI backend API
-                    const res = await fetch(`http://localhost:3005/api/ai/${aiMode}`, {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/${aiMode}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -85,12 +117,13 @@ export function initializeSocketServer(server: any) {
             }
         });
 
-        socket.on("session-closing-request", ({ roomId, userId }: { roomId: string, userId: string }) => {
+        socket.on("session-closing-request", ({ roomId, id }: { roomId: string, id: string }) => {
+            console.log("[Socket.IO] Session close called");
             const clearAiMem = async () => {
                 try {
                     const ids = roomId.split("_");
 
-                    const res = await fetch("http://localhost:3005/api/ai/clear", {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/clear`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ids }),
@@ -108,7 +141,7 @@ export function initializeSocketServer(server: any) {
             if (activeClosures.has(roomId)) return;
 
             let countdown = 60;
-            io.to(roomId).emit("session-closing-start", { countdown, closedBy: userId });
+            io.to(roomId).emit("session-closing-start", { countdown, closedBy: id});
 
             const interval = setInterval(() => {
                 countdown--;
@@ -126,26 +159,42 @@ export function initializeSocketServer(server: any) {
             activeClosures.set(roomId, interval);
         })
 
-        socket.on("session-cancel-closing", ({ roomId, userId }) => {
+        socket.on("session-cancel-closing", ({ roomId, id }) => {
             const timer = activeClosures.get(roomId);
             if (timer) {
                 clearInterval(timer);
                 activeClosures.delete(roomId);
-                io.to(roomId).emit("session-closing-cancelled", { closedBy: userId });
+                io.to(roomId).emit("session-closing-cancelled", { closedBy: id });
                 console.log(`Room ${roomId} closure cancelled`);
             }
         })
 
-        socket.on("cancel-poll", ({ roomId, senderId }) => {
-            console.log("received")
-            socket.join(roomId);
-            io.to(roomId).emit("cancel-poll", { senderId });
-        })
-
         socket.on("disconnect", () => {
+            socketClients.delete(socket.data.userId);
             console.log(`[Socket.IO] Client disconnected: ${socket.id}`);
         });
     });
-
-    return io;
 }
+
+function joinRoom(userId: string, roomId: string) {
+    const socket = socketClients.get(userId);
+    if (socket) {
+        socket.join(roomId);
+        console.log(`[Socket.IO] User ${userId} joined room ${roomId}`);
+    } else {
+        console.log(`[Socket.IO] No socket found for user ${userId}`);
+    }
+}
+
+function cancelPoll(senderId: string, matchedUserId: string) {
+    socketClients.get(senderId)?.emit("cancel-poll", { senderId });
+    socketClients.get(matchedUserId)?.emit("cancel-poll", { senderId });
+}
+
+function sendMessage(roomId: string, senderId: string, message: string) {
+    const users = roomId.split("_");
+    socketClients.get(users[0])?.emit("receive-message", { senderId, message });
+    socketClients.get(users[1])?.emit("receive-message", { senderId, message });
+}
+
+export { initializeSocketServer, joinRoom, cancelPoll, sendMessage };

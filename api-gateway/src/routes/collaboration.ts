@@ -6,7 +6,64 @@ import { UserRole } from "shared";
 const collaborationRouter = Router();
 const COLLABORATION_SERVICE_URL = process.env.COLLABORATION_SERVICE_BASE_URL!;
 
-// add your endpoints here, including the socket endpoint
-// see other route files for examples
+collaborationRouter.post(
+    "/api/roomSetup/me",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.get(
+    "/api/roomSetup/users/:userId/:matchedUserId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.post(
+    "/api/roomSetup/join/:roomId/:userId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+)
+
+collaborationRouter.post(
+    "/api/roomSetup/room/:userId/:matchedUserId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.post(
+    "/api/roomSetup/close/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.get(
+    "/api/roomSetup/codespace/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.post(
+    "/api/roomSetup/message/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.use("/socket/collaboration",
+    proxyMiddleware(COLLABORATION_SERVICE_URL, "/socket/collaboration", true)
+);
 
 export { collaborationRouter };

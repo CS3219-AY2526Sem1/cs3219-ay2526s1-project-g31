@@ -51,6 +51,7 @@ export default function MatchingPage() {
 
         try {
             // Connect to matching service through API Gateway
+            console.log(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL);
             const socket = io(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL, {
                 path: '/socket/matching',
                 auth: {
@@ -137,14 +138,16 @@ export default function MatchingPage() {
     };
 
     const handleJoinRoom = async () => {
-        if (!user || !matchedUser) return;
+        if (!user || !matchedUser || !accessToken) {
+            setError('Please log in to start matching');
+            return;
+        }
 
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
 
         try {
-            await fetch("http://localhost:3004/api/roomSetup/me", {
+            await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/me`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user: user, matchedUser: matchedUser }),
             });
         } catch (err) {
