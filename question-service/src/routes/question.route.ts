@@ -22,15 +22,14 @@ router.post(
   validateQuestion,
   async (req, res) => {
   try {
-    const { title, description, difficulty, topics, mediaUrls } = req.body;
+    const { title, description, difficulty, topics } = req.body;
 
     const question = await prisma.question.create({
       data: {
         title,
         description,
         difficulty,
-        topics,
-        mediaUrls: mediaUrls || [],
+        topics
       },
     });
 
@@ -45,11 +44,11 @@ router.put("/:id",
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, difficulty, topics, mediaUrls } = req.body;
+      const { title, description, difficulty, topics } = req.body;
 
     const updated = await prisma.question.update({
       where: { id },
-      data: { title, description, difficulty, topics, mediaUrls },
+      data: { title, description, difficulty, topics },
     });
 
     res.json(updated);

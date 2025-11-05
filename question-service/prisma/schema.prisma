@@ -32,7 +32,6 @@ model Question {
   description String
   difficulty  Difficulty
   topics      Topic[]
-  mediaUrls   String[]
   createdAt   DateTime     @default(now())
 
   @@index([difficulty])
