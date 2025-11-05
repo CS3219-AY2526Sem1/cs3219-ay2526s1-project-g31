@@ -23,7 +23,7 @@ collaborationRouter.get(
 );
 
 collaborationRouter.post(
-    "/api/roomSetup/join/:roomId/:userId",
+    "/api/roomSetup/join/:roomId",
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
@@ -46,6 +46,22 @@ collaborationRouter.post(
     proxyMiddleware(COLLABORATION_SERVICE_URL)
 );
 
+collaborationRouter.post(
+    "/api/roomSetup/cancel/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.post(
+    "/api/roomSetup/clear/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
 collaborationRouter.get(
     "/api/roomSetup/codespace/:roomId",
     verifyAccessToken,
@@ -56,6 +72,14 @@ collaborationRouter.get(
 
 collaborationRouter.post(
     "/api/roomSetup/message/:roomId",
+    verifyAccessToken,
+    authorizedRoles([UserRole.USER, UserRole.ADMIN]),
+    attachUserFromJwt,
+    proxyMiddleware(COLLABORATION_SERVICE_URL)
+);
+
+collaborationRouter.post(
+    "/api/roomSetup/ai-message/:roomId",
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,

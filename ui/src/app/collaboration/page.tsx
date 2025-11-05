@@ -11,10 +11,10 @@ import { WebrtcProvider } from "y-webrtc";
 import { MonacoBinding } from "y-monaco";
 import * as Y from "yjs"
 
-import { RoomPayload } from "../../../../collaboration-service/src/model/room";
 import Spinner from "@/components/Spinner";
 import { useMatch } from "@/contexts/MatchContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { RoomPayload } from "shared";
 
 const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"] as const;
 
@@ -64,41 +64,44 @@ export default function CollaborationPage() {
         ["Ruby", "ruby"],
     ]);
 
-    // useEffect(() => {
-    //     return () => {
-    //         if (providerRef.current) {
-    //             providerRef.current.destroy();
-    //             providerRef.current = null;
-    //         }
+    useEffect(() => {
+        return () => {
+            console.log("unmounted");
+            if (providerRef.current) {
+                providerRef.current.destroy();
+                providerRef.current = null;
+            }
 
-    //         if (pollIntervalRef.current) {
-    //             clearInterval(pollIntervalRef.current);
-    //             pollIntervalRef.current = null;
-    //         }
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
 
-    //         if (pollTimeoutRef.current) {
-    //             clearTimeout(pollTimeoutRef.current);
-    //             pollTimeoutRef.current = null;
-    //         }
+            if (pollTimeoutRef.current) {
+                clearTimeout(pollTimeoutRef.current);
+                pollTimeoutRef.current = null;
+            }
 
-    //         if (socketRef.current) {
-    //             socketRef.current.disconnect();
-    //             socketRef.current = null;
-    //         }
-    //     };
-    // }, []);
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+
+            clearMatchedUser();
+        };
+    }, []);
 
     /**
      * Handles Socket.IO emissions
      */
     useEffect(() => {
-        if (!accessToken) return;
-
         try {
-            console.log(process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL);
-            const socket = io(process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL, {
-                path: "/socket/collaboration",
-                auth: { token: accessToken },
+            // Problem is here, when I change port 3004 to port 4000, it stops working
+            const socket = io("http://localhost:3004", {
+                path: '/socket/collaboration',
+                auth: {
+                    token: accessToken
+                },
                 transports: ['websocket', 'polling'],
             });
             socketRef.current = socket;
@@ -149,15 +152,27 @@ export default function CollaborationPage() {
             });
 
             socket.on("session-ended", () => {
-                const removeFromCollection = async () => {
+                if (!user || !roomId) return;
+                const removeFromCollection = async (userId: string, users: string[]) => {
                     try {
-                        const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/close/${roomId}`,{
+                        const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/clear/${roomId}`,{
                             method: "POST",
+                            body: JSON.stringify({ userId })
                         });
 
                         if (!res.ok) {
-                            console.error("Failed to end session");
+                            console.error("Failed to clear data");
                             return;
+                        }
+
+                        const aiRes = await authFetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/clear`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ users }),
+                        });
+
+                        if (!aiRes.ok) {
+                            console.error("Failed to clear ai messages")
                         }
                     } catch (err) {
                         console.error("Error closing session:", err);
@@ -165,7 +180,7 @@ export default function CollaborationPage() {
                     }
                 }
 
-                removeFromCollection();
+                removeFromCollection(user.id, roomId.split("_"));
                 socket.disconnect();
                 clearMatchedUser();
                 setIsClosing(false);
@@ -189,7 +204,7 @@ export default function CollaborationPage() {
                 socketRef.current = null;
             }
         }
-    }, [accessToken]);
+    }, []);
 
     // UseEffect to create room when both users are ready
     useEffect(() => {
@@ -231,13 +246,14 @@ export default function CollaborationPage() {
             }
         }
 
-        const joinRoom = async () => {
+        const joinRoom = async (userId: string) => {
             try  {
                 const res = await authFetch(
-                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/join/${roomId}/${user.id}`,
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/join/${roomId}`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId })
                     }
                 );
 
@@ -251,16 +267,29 @@ export default function CollaborationPage() {
             }
         }
 
-        const cancelJoining = async () => {
+        const cancelJoining = async (userId: string, users: string[]) => {
             try {
                 const res = await authFetch(
-                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/close/${roomId}/${user.id}`,
-                    { method: "POST" }
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/clear/${roomId}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({ userId })
+                    }
                 );
 
                 if (!res.ok) {
                     console.error("Failed to close session");
                     return;
+                }
+
+                const aiRes = await authFetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/clear`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ users }),
+                });
+
+                if (!aiRes.ok) {
+                    console.error("Failed to clear ai messages")
                 }
             } catch (err) {
                 console.error("Error closing session:", err);
@@ -288,7 +317,7 @@ export default function CollaborationPage() {
                     const newRoom = await createRoom();
                     setRoomData(newRoom);
 
-                    await joinRoom();
+                    await joinRoom(user.id);
 
                     console.log(`[Collaboration Page] Room created: ${newRoom.roomId}`);
                     setIsRoomCreated(true);
@@ -306,7 +335,7 @@ export default function CollaborationPage() {
                 console.warn("timed out");
                 clearInterval(pollIntervalRef.current);
                 pollIntervalRef.current = null;
-                cancelJoining();
+                cancelJoining(user.id, roomId.split("_"));
             }
         }, 60000)
     }, [user, matchedUser, roomId]);
@@ -386,7 +415,7 @@ export default function CollaborationPage() {
         const sendMessage = async (senderId: string, message: string) => {
             try {
                 const res = await authFetch(
-                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/message/${roomId}/${senderId}/${message}`,
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/message/${roomId}`,
                     {
                         method: "POST",
                         body: JSON.stringify({ senderId, message })
@@ -416,11 +445,51 @@ export default function CollaborationPage() {
      * Handles session closure.
      */
     const handleClose = () => {
+        const requestSessionClosing = async (userId: string) => {
+            try {
+                const res = await authFetch(
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/close/${roomId}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({ userId })
+                    }
+                );
+
+                if (!res.ok) {
+                    console.error("Failed to closing session");
+                    return;
+                }
+            } catch (err) {
+                console.error("Error closing session:", err);
+                setError('Failed to close session');
+            }
+        }
+
+        const cancelSessionClosing = async (userId: string) => {
+            try {
+                const res = await authFetch(
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/cancel/${roomId}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({ userId })
+                    }
+                );
+
+                if (!res.ok) {
+                    console.error("Failed to cancel session closure");
+                    return;
+                }
+            } catch (err) {
+                console.error("Error cancelling session closure:", err);
+                setError('Failed to cancel session closure');
+            }
+        }
+
         if (!isClosing) {
             if (confirm("Do you want to close the session in 1 minute?")) {
                 if (user?.id !== undefined) {
                     setUserClosed(user.id);
-                    //socketRef.current?.("session-closing-request", { roomId, userId: user.id });
+                    requestSessionClosing(user.id);
                 }
                 
             }
@@ -428,7 +497,7 @@ export default function CollaborationPage() {
             if (userClosed !== null && confirm("Cancel session closure?")) {
                 if (user?.id !== undefined) {
                     setUserClosed(null);
-                    //socketRef.current?.("session-cancel-closing", { roomId, userId: user.id });
+                    cancelSessionClosing(user.id)
                 }   
             }
         }
@@ -439,24 +508,55 @@ export default function CollaborationPage() {
      */
     const sendAiMessage = async () => {
         if (!user || !roomData || !editorRef.current || !aiInput.trim()) return;
+
+        const sendMessage = async (senderId: string, message: string) => {
+            try {
+                const res = await authFetch(
+                    `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/ai-message/${roomId}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({ senderId, message })
+                    }
+                );
+
+                if (!res.ok) {
+                    console.error("Failed to send AI message");
+                    return;
+                }
+            } catch (err) {
+                console.error("Error sending message:", err);
+                setError('Failed to send message');
+            }
+        }
+
         setIsSendingAiMessage(true);
 
         const userPrompt = aiInput;
-        const code = editorRef.current.getValue(); 
-
-        // socketRef.current?.("ai-message", {
-        //     roomId,
-        //     senderId: user.id,
-        //     question: `${roomData.question.title}\n\n${roomData.question.description}`, 
-        //     code,
-        //     prompt: userPrompt,
-        //     type: "user-prompt",
-        //     aiMode,
-        //     numPrompts: numAiPrompts
-        // });
-
-        // Clear input locally
+        const code = editorRef.current.getValue();
         setAiInput("");
+
+        try {
+            sendMessage(user.id, userPrompt);
+
+            const res = await authFetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/${aiMode}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: `${roomData.question.title}\n\n${roomData.question.description}`,
+                    code: code || "",
+                    prompt: userPrompt,
+                    session_id: user.id,
+                    numPrompts: numAiPrompts
+                }),
+            });
+            
+            const result = await res.json();
+            sendMessage("AI", result.response || "No response from AI");
+        } catch (error) {
+            console.error("[Socket.IO] AI service error:", error);
+            sendMessage("AI", "Failed to get response from AI service.");
+        }
+
         if (numAiPrompts > 0) setNumAiPrompts(numAiPrompts - 1);
     };
 

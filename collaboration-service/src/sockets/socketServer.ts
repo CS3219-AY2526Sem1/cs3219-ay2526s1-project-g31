@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken"
 import { Server, Socket } from "socket.io";
 
 interface JwtPayload {
@@ -6,6 +6,7 @@ interface JwtPayload {
     userRole: string;
 }
 
+const activeClosures = new Map();
 const socketClients = new Map<string, Socket>();
 
 /**
@@ -15,10 +16,8 @@ const socketClients = new Map<string, Socket>();
  * @returns Socket.IO to use for collaboration service.
  */
 function initializeSocketServer(server: any) {
-    const activeClosures = new Map();
-
     const io = new Server(server, {
-        path: "/socket/collaboration",
+        path: '/socket/collaboration',
         cors: {
             origin: process.env.UI_BASE_URL,
             credentials: true,
@@ -26,7 +25,6 @@ function initializeSocketServer(server: any) {
     });
 
     io.use((socket, next) => {
-        console.log("reached");
         const token = socket.handshake.auth.token;
         if (!token) {
             return next(new Error("Missing token"));
@@ -50,124 +48,10 @@ function initializeSocketServer(server: any) {
         }
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: Socket) => {
         const userId = socket.data.userId;
         socketClients.set(userId, socket);
         console.log(`[Socket.IO] Client connected: ${userId}`);
-
-        socket.on("message", ({ roomId, senderId, message }: { roomId: string, senderId: string; message: string }) => {
-            console.log("[Socket.IO] Message called");
-            io.to(roomId).emit("receive-message", { senderId, message });
-        });
-
-        // Handle AI message events
-        socket.on("ai-message", async (data: { 
-            roomId: string; 
-            senderId: string; 
-            question: string; 
-            code: string; 
-            prompt: string; 
-            type:string;
-            aiMode?: string;
-            numPrompts: number;
-        }) => {
-            console.log("[Socket.IO] AI message called");
-            const { roomId, senderId, question, code, prompt, type, aiMode, numPrompts } = data;
-
-            if (!roomId) {
-                console.warn(`[Socket.IO] Missing roomId for message from ${senderId}`);
-                return;
-            }
-
-            if (type === "user-prompt") {
-                // Broadcast user's prompt to everyone in the room
-                io.to(roomId).emit("ai-message", { senderId, prompt });
-
-                try {
-                    // Call your AI backend API
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/${aiMode}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            question: question,
-                            code: code || "",
-                            prompt: prompt,
-                            session_id: senderId,
-                            numPrompts: numPrompts
-                        }),
-                    });
-                    
-                    const result = await res.json();
-                    const aiResponse = result.response || "No response from AI";
-
-                    // Broadcast AI's response to the same room
-                    io.to(roomId).emit("ai-message", {
-                        senderId: "AI",
-                        prompt: aiResponse
-                    });
-
-                } catch (error) {
-                    console.error("[Socket.IO] AI service error:", error);
-
-                    io.to(roomId).emit("ai-message", {
-                        senderId: "AI",
-                        prompt: "Failed to get response from AI service.",
-                    });
-                }
-            }
-        });
-
-        socket.on("session-closing-request", ({ roomId, id }: { roomId: string, id: string }) => {
-            console.log("[Socket.IO] Session close called");
-            const clearAiMem = async () => {
-                try {
-                    const ids = roomId.split("_");
-
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_AI_SERVICE_BASE_URL}/api/ai/clear`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ids }),
-                    });
-
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                    console.log(`[Socket.IO] Session closed, deleted data for users: ${ids.join(", ")}`);
-
-                } catch (err) {
-                    console.error("[Socket.IO] Failed to close session:", err);
-                }
-            }
-
-            if (activeClosures.has(roomId)) return;
-
-            let countdown = 60;
-            io.to(roomId).emit("session-closing-start", { countdown, closedBy: id});
-
-            const interval = setInterval(() => {
-                countdown--;
-                io.to(roomId).emit("session-countdown-tick", { countdown });
-
-                if (countdown <= 0) {
-                    clearInterval(interval);
-                    activeClosures.delete(roomId);
-                    io.to(roomId).emit("session-ended");
-                    clearAiMem();
-                    console.log(`Room ${roomId} closed`);
-                }
-            }, 1000);
-
-            activeClosures.set(roomId, interval);
-        })
-
-        socket.on("session-cancel-closing", ({ roomId, id }) => {
-            const timer = activeClosures.get(roomId);
-            if (timer) {
-                clearInterval(timer);
-                activeClosures.delete(roomId);
-                io.to(roomId).emit("session-closing-cancelled", { closedBy: id });
-                console.log(`Room ${roomId} closure cancelled`);
-            }
-        })
 
         socket.on("disconnect", () => {
             socketClients.delete(socket.data.userId);
@@ -197,4 +81,48 @@ function sendMessage(roomId: string, senderId: string, message: string) {
     socketClients.get(users[1])?.emit("receive-message", { senderId, message });
 }
 
-export { initializeSocketServer, joinRoom, cancelPoll, sendMessage };
+function sendAiMessage(roomId: string, senderId: string, message: string) {
+    const users = roomId.split("_");
+    socketClients.get(users[0])?.emit("ai-message", { senderId, prompt: message });
+    socketClients.get(users[1])?.emit("ai-message", { senderId, prompt: message });
+}
+
+function requestSessionClosure(roomId: string, userId: string) {
+    console.log("[Socket.IO] Session close called");
+    const users = roomId.split("_");
+    if (activeClosures.has(roomId)) return;
+
+    let countdown = 60;
+    socketClients.get(users[0])?.emit("session-closing-start", { countdown, closedBy: userId});
+    socketClients.get(users[1])?.emit("session-closing-start", { countdown, closedBy: userId});
+
+    const interval = setInterval(() => {
+        countdown--;
+        socketClients.get(users[0])?.emit("session-countdown-tick", { countdown });
+        socketClients.get(users[1])?.emit("session-countdown-tick", { countdown });
+
+        if (countdown <= 0) {
+            clearInterval(interval);
+            activeClosures.delete(roomId);
+            socketClients.get(users[0])?.emit("session-ended");
+            socketClients.get(users[1])?.emit("session-ended");
+            console.log(`Room ${roomId} closed`);
+        }
+    }, 1000);
+
+    activeClosures.set(roomId, interval);
+}
+
+function cancelSessionClosure(roomId: string, senderId: string) {
+    const timer = activeClosures.get(roomId);
+    if (timer) {
+        const users = roomId.split("_");
+        clearInterval(timer);
+        activeClosures.delete(roomId);
+        socketClients.get(users[0])?.emit("session-closing-cancelled", { closedBy: senderId });
+        socketClients.get(users[1])?.emit("session-closing-cancelled", { closedBy: senderId });
+        console.log(`Room ${roomId} closure cancelled`);
+    }
+}
+
+export { initializeSocketServer, joinRoom, cancelPoll, sendMessage, sendAiMessage, requestSessionClosure, cancelSessionClosure };

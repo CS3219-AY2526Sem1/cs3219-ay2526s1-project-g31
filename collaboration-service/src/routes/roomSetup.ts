@@ -1,8 +1,7 @@
 import express from 'express';
 import * as Y from "yjs";
-import { Question, User } from 'shared';
-import { RoomPayload } from 'src/model/room';
-import { cancelPoll, joinRoom, sendMessage } from '../sockets/socketServer';
+import { Question, RoomPayload, User } from 'shared';
+import { cancelPoll, cancelSessionClosure, joinRoom, requestSessionClosure, sendAiMessage, sendMessage } from '../sockets/socketServer';
 
 const router = express.Router();
 const mutex = new Set();
@@ -92,8 +91,9 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
     }
 });
 
-router.post("/join/:roomId/:userId", (req, res) => {
-    const { roomId, userId } = req.params;
+router.post("/join/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
     joinRoom(userId, roomId);
     res.status(200).json({ status: "ok" });
 })
@@ -115,8 +115,9 @@ router.get("/codespace/:roomId", (req, res) => {
     res.status(200).json({ doc: base64State })
 });
 
-router.post("/close/:roomId/:userId", (req, res) => {
-    const { roomId, userId } = req.params;
+router.post("/clear/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
 
     delete rooms[roomId];
     delete docs[roomId];
@@ -130,12 +131,31 @@ router.post("/close/:roomId/:userId", (req, res) => {
     res.status(200).json({ success: true });
 });
 
+router.post("/close/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+    requestSessionClosure(roomId, userId);
+    res.status(200).json({ success: true });
+})
+
+router.post("/cancel/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+    cancelSessionClosure(roomId, userId);
+    res.status(200).json({ success: true });
+})
+
 router.post("/message/:roomId", (req, res) => {
     const { roomId } = req.params;
     const { senderId, message } = req.body;
-    console.log(`${senderId} and ${message}`)
     sendMessage(roomId, senderId, message);
+    res.status(200).json({ success: true });
+})
 
+router.post("/ai-message/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { senderId, message } = req.body;
+    sendAiMessage(roomId, senderId, message);
     res.status(200).json({ success: true });
 })
 

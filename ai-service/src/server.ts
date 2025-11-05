@@ -6,8 +6,9 @@ import aiRouter from "./routes/aiRoute";
 
 const app = express();
 app.use(express.json());
+console.log(process.env.UI_BASE_URL)
 app.use(cors({
-    origin: UI_BASE_URL,
+    origin: process.env.UI_BASE_URL,
     credentials: true,
 }));
 

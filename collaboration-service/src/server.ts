@@ -17,4 +17,4 @@ app.get("/", (req, res) => res.send("Collaboration Service is running!"));
 const server = http.createServer(app);
 initializeSocketServer(server);
 
-export default app;
+export default server;
