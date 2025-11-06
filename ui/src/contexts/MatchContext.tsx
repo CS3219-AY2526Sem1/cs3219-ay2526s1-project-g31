@@ -16,6 +16,7 @@ interface MatchContextType {
     matchedUser: MatchInfo | null;
     setMatchedUser: (user: MatchInfo) => void;
     clearMatchedUser: () => void;
+    clearSessionStorage: () => void;
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
@@ -48,11 +49,14 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
     const clearMatchedUser = () => {
         setMatchedUserState(null);
-        sessionStorage.removeItem(MATCH_STORAGE_KEY);
     };
 
+    const clearSessionStorage = () => {
+        sessionStorage.removeItem(MATCH_STORAGE_KEY);
+    }
+
     return (
-        <MatchContext.Provider value={{ matchedUser, setMatchedUser, clearMatchedUser }}>
+        <MatchContext.Provider value={{ matchedUser, setMatchedUser, clearMatchedUser, clearSessionStorage }}>
             {isInitialized ? children : null}
         </MatchContext.Provider>
     );

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken, authorizedRoles, attachUserFromJwt } from "../middleware/jwt";
-import { proxyMiddleware } from "../middleware/proxy";
+import { httpProxy } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const router = Router();
@@ -12,7 +12,7 @@ router.get(
   verifyAccessToken,
   authorizedRoles([UserRole.USER, UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 router.post(
@@ -20,7 +20,7 @@ router.post(
   verifyAccessToken,
   authorizedRoles([UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 router.get(
@@ -28,7 +28,7 @@ router.get(
   verifyAccessToken,
   authorizedRoles([UserRole.USER, UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 router.get(
@@ -36,7 +36,7 @@ router.get(
   verifyAccessToken,
   authorizedRoles([UserRole.USER, UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 router.put(
@@ -44,7 +44,7 @@ router.put(
   verifyAccessToken,
   authorizedRoles([UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 router.delete(
@@ -52,7 +52,7 @@ router.delete(
   verifyAccessToken,
   authorizedRoles([UserRole.ADMIN]),
   attachUserFromJwt,
-  proxyMiddleware(QUESTION_SERVICE_URL)
+  httpProxy(QUESTION_SERVICE_URL)
 );
 
 export { router as questionRouter };

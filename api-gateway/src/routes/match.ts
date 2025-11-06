@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken, authorizedRoles, attachUserFromJwt } from "../middleware/jwt";
-import { proxyMiddleware } from "../middleware/proxy";
+import { httpProxy } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const matchRouter = Router();
@@ -11,12 +11,7 @@ matchRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(MATCHING_SERVICE_URL),
-);
-
-// socket.io verifies access token, no need to re-verify here
-matchRouter.use("/socket/matching",
-    proxyMiddleware(MATCHING_SERVICE_URL, "/socket/matching", true)
+    httpProxy(MATCHING_SERVICE_URL),
 );
 
 export { matchRouter };
