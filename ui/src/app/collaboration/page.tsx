@@ -231,6 +231,7 @@ export default function CollaborationPage() {
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ difficulty: matchedUser.difficulty, topic: matchedUser.topic })
                     }
                 );
 
