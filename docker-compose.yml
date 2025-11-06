@@ -70,8 +70,17 @@ services:
       - ./.env.production.local
     networks:
       - peerprep
-    depends_on:
-      - mongo-init
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    image: ai-service:latest
+    hostname: "ai-service"
+    env_file:
+      - ./ai-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
   redis:
     image: redis:latest
     hostname: "redis"

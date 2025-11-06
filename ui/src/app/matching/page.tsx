@@ -18,7 +18,7 @@ const Language = { ...l, ANY: 'Any' };
 export default function MatchingPage() {
     const { user } = useUser();
     const { accessToken, authFetch } = useAuth();
-    const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
+    const { matchedUser, setMatchedUser, clearMatchedUser, clearSessionStorage } = useMatch();
     const router = useRouter();
 
     const [difficulty, setDifficulty] = useState(Difficulty.EASY);
@@ -48,6 +48,7 @@ export default function MatchingPage() {
         setIsMatching(true);
         setError(null);
         clearMatchedUser();
+        clearSessionStorage();
 
         try {
             // Connect to matching service through API Gateway
@@ -56,7 +57,7 @@ export default function MatchingPage() {
                 auth: {
                     token: accessToken
                 },
-                transports: ['websocket', 'polling'],
+                transports: ['websocket'],
             });
             socketRef.current = socket;
 
@@ -137,14 +138,16 @@ export default function MatchingPage() {
     };
 
     const handleJoinRoom = async () => {
-        if (!user || !matchedUser) return;
+        if (!user || !matchedUser || !accessToken) {
+            setError('Please log in to start matching');
+            return;
+        }
 
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
 
         try {
-            await fetch("http://localhost:3004/api/roomSetup/me", {
+            await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/me`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user: user, matchedUser: matchedUser }),
             });
         } catch (err) {
@@ -236,6 +239,7 @@ export default function MatchingPage() {
                             <button
                                 onClick={() => {
                                     clearMatchedUser();
+                                    clearSessionStorage();
                                     setError(null);
                                 }}
                                 className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"

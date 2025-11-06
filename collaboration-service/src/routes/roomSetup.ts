@@ -1,13 +1,43 @@
 import express from 'express';
 import * as Y from "yjs";
-import { Question, User } from 'shared';
-import { RoomPayload } from 'src/model/room';
+import { Question, RoomPayload, User } from 'shared';
+import { cancelPoll, cancelSessionClosure, joinRoom, requestSessionClosure, sendAiMessage, sendMessage } from '../sockets/socketServer';
 
 const router = express.Router();
 const mutex = new Set();
 const readyUsers: Record<string, Set<User>> = {};
 const rooms: Record<string, RoomPayload> = {};
 const docs: Record<string, Y.Doc> = {};
+
+/**
+ * Sets the ready status of the current user to be true.
+ */
+router.post("/me", (req, res) => {
+    const { user, matchedUser } = req.body;
+    const pairKey = [user.id, matchedUser.userId].sort().join("_");
+
+    if (!readyUsers[pairKey]) {
+        console.log("Creating new ready set for pair:", pairKey);
+        readyUsers[pairKey] = new Set();
+    }
+    if (!readyUsers[pairKey].has(user)) readyUsers[pairKey].add(user);
+
+    res.json({ status: "ok" });
+});
+
+/**
+ * Returns whether both users have joined the collaboration room.
+ * 
+ * @param userId ID of the current user.
+ * @param matchedUserId ID of the user the current user is matched with.
+ */
+router.get("/users/:userId/:matchedUserId", (req, res) => {
+    const { userId, matchedUserId } = req.params;
+    const pairKey = [userId, matchedUserId].sort().join("_");
+    const readySet = readyUsers[pairKey] || new Set();
+    const bothReady = readySet.size === 2;
+    res.json({ bothReady });
+});
 
 /**
  * Joins both users to a shared collaboration session.
@@ -35,16 +65,20 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
             return res.status(200).json({ newRoom: rooms[roomId] });
         }
 
-        const dummyQuestion: Question = {
-            id: "question",
-            title: "Dummy Question",
-            description: "A dummy question for testing"
-        };
+        const { difficulty, topic } = req.body;
+
+        const questionServiceUrl = process.env.QUESTION_SERVICE_BASE_URL;
+        const questionRes = await fetch(`${questionServiceUrl}/api/question/random?difficulty=${difficulty}&topic=${topic}`);
+        if (!questionRes.ok) {
+            throw new Error("Failed to fetch question");
+        }
+
+        const question = await questionRes.json();
 
         const newRoom: RoomPayload = {
             roomId,
             userIds: [userId, matchedUserId],
-            question: dummyQuestion,
+            question,
             createdAt: Date.now(),
             lastActiveAt: Date.now(),
         }
@@ -61,46 +95,12 @@ router.post("/room/:userId/:matchedUserId", async (req, res) => {
     }
 });
 
-router.post("/close/:roomId", (req, res) => {
+router.post("/join/:roomId", (req, res) => {
     const { roomId } = req.params;
-
-    delete rooms[roomId];
-    delete docs[roomId];
-    delete readyUsers[roomId];
-    mutex.delete(roomId);
-
-    res.json({ success: true });
-});
-
-/**
- * Sets the ready status of the current user to be true.
- */
-router.post("/me", (req, res) => {
-    const { user, matchedUser } = req.body;
-    const pairKey = [user.id, matchedUser.userId].sort().join("_");
-
-    if (!readyUsers[pairKey]) {
-        console.log("Creating new ready set for pair:", pairKey);
-        readyUsers[pairKey] = new Set();
-    }
-    readyUsers[pairKey].add(user);
-
-    res.json({ status: "ok" });
-});
-
-/**
- * Returns whether both users have joined the collaboration room.
- * 
- * @param userId ID of the current user.
- * @param matchedUserId ID of the user the current user is matched with.
- */
-router.get("/users/:userId/:matchedUserId", (req, res) => {
-    const { userId, matchedUserId } = req.params;
-    const pairKey = [userId, matchedUserId].sort().join("_");
-    const readySet = readyUsers[pairKey] || new Set();
-    const bothReady = readySet.size === 2;
-    res.json({ bothReady });
-});
+    const { userId } = req.body;
+    joinRoom(userId, roomId);
+    res.status(200).json({ status: "ok" });
+})
 
 /**
  * Retrieves the common Yjs document between the two users.
@@ -116,7 +116,51 @@ router.get("/codespace/:roomId", (req, res) => {
     const state = Y.encodeStateAsUpdate(doc);
     const base64State = Buffer.from(state).toString("base64");
 
-    res.json({ doc: base64State })
+    res.status(200).json({ doc: base64State })
 });
+
+router.post("/clear/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+
+    delete rooms[roomId];
+    delete docs[roomId];
+    delete readyUsers[roomId];
+    mutex.delete(roomId);
+
+    const users = roomId.split("_");
+    const otherUser = (users[0] === userId) ? users[1] : users[0];
+    cancelPoll(userId, otherUser);
+
+    res.status(200).json({ success: true });
+});
+
+router.post("/close/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+    requestSessionClosure(roomId, userId);
+    res.status(200).json({ success: true });
+})
+
+router.post("/cancel/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+    cancelSessionClosure(roomId, userId);
+    res.status(200).json({ success: true });
+})
+
+router.post("/message/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { senderId, message } = req.body;
+    sendMessage(roomId, senderId, message);
+    res.status(200).json({ success: true });
+})
+
+router.post("/ai-message/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const { senderId, message } = req.body;
+    sendAiMessage(roomId, senderId, message);
+    res.status(200).json({ success: true });
+})
 
 export default router;

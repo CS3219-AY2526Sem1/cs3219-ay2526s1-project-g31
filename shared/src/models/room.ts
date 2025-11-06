@@ -1,4 +1,4 @@
-import { Question } from "shared";
+import { Question } from "./question";
 
 /**
  * Data of the collaboration room session.

@@ -332,7 +332,7 @@ export default function AdminQuestionsPage() {
                         Description
                       </label>
                       <textarea
-                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500 min-h-[120px]"
+                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500 min-h-[250px]"
                         value={editing.description || ''}
                         disabled={busy}
                         onChange={(e) =>
@@ -387,20 +387,6 @@ export default function AdminQuestionsPage() {
                                 </option>
                             ))}
                         </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-1">
-                        Media URLs (comma-separated)
-                      </label>
-                      <input
-                        className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                        value={editing.mediaUrls?.join(', ') || ''}
-                        disabled={busy}
-                        onChange={(e) =>
-                          handleMediaUrlsChange(e.target.value, 'edit')
-                        }
-                      />
                     </div>
                   </div>
 
@@ -537,20 +523,6 @@ export default function AdminQuestionsPage() {
                         </option>
                         ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-1">
-                      Media URLs (comma-separated)
-                    </label>
-                    <input
-                      className="w-full bg-gray-100 text-black rounded-md px-3 py-2 border border-gray-500"
-                      value={newDraft.mediaUrls?.join(', ') || ''}
-                      disabled={busy}
-                      onChange={(e) =>
-                        handleMediaUrlsChange(e.target.value, 'new')
-                      }
-                    />
                   </div>
                 </div>
 
