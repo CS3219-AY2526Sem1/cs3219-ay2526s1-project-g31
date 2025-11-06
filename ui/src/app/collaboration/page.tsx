@@ -21,7 +21,7 @@ const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"
 
 export default function CollaborationPage() {
     const { user } = useUser();
-    const { matchedUser, clearMatchedUser } = useMatch();
+    const { matchedUser, clearMatchedUser, clearSessionStorage } = useMatch();
     const { accessToken, authFetch } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -182,6 +182,7 @@ export default function CollaborationPage() {
                 removeFromCollection(user.id, roomId.split("_"));
                 socket.disconnect();
                 clearMatchedUser();
+                clearSessionStorage();
                 setIsClosing(false);
                 setCountdown(null);
                 setCodespace(null);

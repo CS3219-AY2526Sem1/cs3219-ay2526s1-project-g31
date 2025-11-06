@@ -18,7 +18,7 @@ const Language = { ...l, ANY: 'Any' };
 export default function MatchingPage() {
     const { user } = useUser();
     const { accessToken, authFetch } = useAuth();
-    const { matchedUser, setMatchedUser, clearMatchedUser } = useMatch();
+    const { matchedUser, setMatchedUser, clearMatchedUser, clearSessionStorage } = useMatch();
     const router = useRouter();
 
     const [difficulty, setDifficulty] = useState(Difficulty.EASY);
@@ -48,6 +48,7 @@ export default function MatchingPage() {
         setIsMatching(true);
         setError(null);
         clearMatchedUser();
+        clearSessionStorage();
 
         try {
             // Connect to matching service through API Gateway
@@ -238,6 +239,7 @@ export default function MatchingPage() {
                             <button
                                 onClick={() => {
                                     clearMatchedUser();
+                                    clearSessionStorage();
                                     setError(null);
                                 }}
                                 className="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
