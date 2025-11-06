@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken, authorizedRoles, attachUserFromJwt } from "../middleware/jwt";
-import { proxyMiddleware } from "../middleware/proxy";
+import { httpProxy } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const collaborationRouter = Router();
@@ -11,7 +11,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.get(
@@ -19,7 +19,7 @@ collaborationRouter.get(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -27,7 +27,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 )
 
 collaborationRouter.post(
@@ -35,7 +35,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -43,7 +43,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -51,7 +51,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -59,7 +59,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.get(
@@ -67,7 +67,7 @@ collaborationRouter.get(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -75,7 +75,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 collaborationRouter.post(
@@ -83,11 +83,7 @@ collaborationRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(COLLABORATION_SERVICE_URL)
-);
-
-collaborationRouter.use("/socket/collaboration",
-    proxyMiddleware(COLLABORATION_SERVICE_URL, "/socket/collaboration", true)
+    httpProxy(COLLABORATION_SERVICE_URL)
 );
 
 export { collaborationRouter };

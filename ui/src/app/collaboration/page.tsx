@@ -25,7 +25,7 @@ export default function CollaborationPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
-    
+
     const [codespace, setCodespace] = useState<Y.Doc | null>(null);
     const [countdown, setCountdown] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -86,8 +86,6 @@ export default function CollaborationPage() {
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
-
-            clearMatchedUser();
         };
     }, []);
 
@@ -97,12 +95,12 @@ export default function CollaborationPage() {
     useEffect(() => {
         try {
             // Problem is here, when I change port 3004 to port 4000, it stops working
-            const socket = io("http://localhost:3004", {
+            const socket = io(process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL, {
                 path: '/socket/collaboration',
                 auth: {
                     token: accessToken
                 },
-                transports: ['websocket', 'polling'],
+                transports: ['websocket'],
             });
             socketRef.current = socket;
 
@@ -155,7 +153,7 @@ export default function CollaborationPage() {
                 if (!user || !roomId) return;
                 const removeFromCollection = async (userId: string, users: string[]) => {
                     try {
-                        const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/clear/${roomId}`,{
+                        const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/clear/${roomId}`, {
                             method: "POST",
                             body: JSON.stringify({ userId })
                         });
@@ -227,7 +225,7 @@ export default function CollaborationPage() {
         }
 
         const createRoom = async () => {
-            try  {
+            try {
                 const res = await authFetch(
                     `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/room/${user.id}/${matchedUser.userId}`,
                     {
@@ -247,7 +245,7 @@ export default function CollaborationPage() {
         }
 
         const joinRoom = async (userId: string) => {
-            try  {
+            try {
                 const res = await authFetch(
                     `${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/join/${roomId}`,
                     {
@@ -296,7 +294,7 @@ export default function CollaborationPage() {
                 setError('Failed to close session');
             }
         }
-        
+
         const poll = async () => {
             try {
                 const bothReady = await getBothReady()
@@ -327,7 +325,7 @@ export default function CollaborationPage() {
                 setError('Failed to check readiness');
             }
         };
-        
+
         pollIntervalRef.current = setInterval(() => poll(), 1000);
 
         pollTimeoutRef.current = setTimeout(() => {
@@ -437,7 +435,7 @@ export default function CollaborationPage() {
         } else {
             sendMessage(senderId, message);
         }
-        
+
         setMessageInput("");
     }
 
@@ -491,14 +489,14 @@ export default function CollaborationPage() {
                     setUserClosed(user.id);
                     requestSessionClosing(user.id);
                 }
-                
+
             }
         } else {
             if (userClosed !== null && confirm("Cancel session closure?")) {
                 if (user?.id !== undefined) {
                     setUserClosed(null);
                     cancelSessionClosing(user.id)
-                }   
+                }
             }
         }
     }
@@ -549,7 +547,7 @@ export default function CollaborationPage() {
                     numPrompts: numAiPrompts
                 }),
             });
-            
+
             const result = await res.json();
             sendMessage("AI", result.response || "No response from AI");
         } catch (error) {
@@ -574,14 +572,14 @@ export default function CollaborationPage() {
                 <div className="flex-1"></div>
 
                 <p className="p-1 border-1 border-white rounded mr-1">
-                    { (user?.displayName === undefined) ? "User" : user.displayName }
+                    {(user?.displayName === undefined) ? "User" : user.displayName}
                 </p>
                 <p className="p-1 border-1 border-white rounded ml-1">
-                    { (matchedUser?.displayName === undefined) ? "Matched User" : matchedUser.displayName }
+                    {(matchedUser?.displayName === undefined) ? "Matched User" : matchedUser.displayName}
                 </p>
                 <button
                     className={`p-1 ml-2 border-2 border-black rounded text-white ${(isClosing) ? "bg-red-500" : "bg-red-600"}`}
-                    onClick={ () => handleClose() }
+                    onClick={() => handleClose()}
                 >
                     {(isClosing) ? (userClosed === null) ? `${countdown}s` : `Cancel? (${countdown}s)` : "End Session"}
                 </button>
@@ -610,19 +608,18 @@ export default function CollaborationPage() {
                                 <p
                                     key={idx}
                                     // Have to change so that text color is deterministic for users
-                                    className={`text-1xl mb-2 ${
-                                        senderId === "" ? "text-white" :
+                                    className={`text-1xl mb-2 ${senderId === "" ? "text-white" :
                                         (roomId?.split("_")[0] === senderId) ? "text-blue-500" : "text-green-500"
-                                    }`
-                                }>
+                                        }`
+                                    }>
                                     <strong>{(senderId === user?.id) ? user.displayName : matchedUser?.displayName}</strong>: {message}
                                 </p>
                             ))}
                         </div>
-                        
+
                         <div className="flex-1"></div>
 
-                        
+
                     </div>
                     <div className="bg-black p-2">
                         <div className="flex border-2 border-white-100 pl-2 pr-2">
@@ -631,22 +628,22 @@ export default function CollaborationPage() {
                                 type="text"
                                 value={messageInput}
                                 placeholder="Enter message here"
-                                onChange={ (e) => setMessageInput(e.target.value) }
+                                onChange={(e) => setMessageInput(e.target.value)}
                                 onKeyDown={e => {
                                     if (e.key === "Enter") {
                                         setIsSendingMessage(true);
-                                        if (user) sendMessage(user.id, messageInput) 
+                                        if (user) sendMessage(user.id, messageInput)
                                         setIsSendingMessage(false);
                                     }
                                 }}
                             />
                             <button
-                                onClick={ () => { 
+                                onClick={() => {
                                     setIsSendingMessage(true);
-                                    if (user) sendMessage(user.id, messageInput) 
+                                    if (user) sendMessage(user.id, messageInput)
                                     setIsSendingMessage(false);
                                 }}
-                                disabled={ isSendingMessage }
+                                disabled={isSendingMessage}
                                 className=""
                             >
                                 {isSendingMessage ? "Loading..." : "Send"}
@@ -698,7 +695,7 @@ export default function CollaborationPage() {
                                 <p key={idx} className={`text-sm ${textColor}`}>
                                     <strong>{
                                         (sender === user?.id) ? user.displayName :
-                                        (sender === "AI") ? sender : matchedUser?.displayName
+                                            (sender === "AI") ? sender : matchedUser?.displayName
                                     }</strong>: {msg}
                                 </p>
                             );
@@ -756,7 +753,7 @@ export default function CollaborationPage() {
                                 padding: { top: 20, bottom: 20 },
                                 readOnly: isClosing
                             }}
-                            onMount={(editor) => { 
+                            onMount={(editor) => {
                                 editorRef.current = editor;
                                 setIsEditorReady(true);
 
@@ -767,7 +764,7 @@ export default function CollaborationPage() {
                             }}
                         />
                     </div>
-                    
+
 
                     {isClosing && (
                         <div className="mt-2 bg-gray-800 text-white text-center py-2 rounded shadow-lg transition-all duration-300">

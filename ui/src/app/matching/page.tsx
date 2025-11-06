@@ -51,13 +51,12 @@ export default function MatchingPage() {
 
         try {
             // Connect to matching service through API Gateway
-            console.log(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL);
             const socket = io(process.env.NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL, {
                 path: '/socket/matching',
                 auth: {
                     token: accessToken
                 },
-                transports: ['websocket', 'polling'],
+                transports: ['websocket'],
             });
             socketRef.current = socket;
 
@@ -227,7 +226,7 @@ export default function MatchingPage() {
                             </div>
 
                         </div>
-                        
+
                         <div className="space-y-3">
                             <button
                                 onClick={handleJoinRoom}
@@ -246,7 +245,7 @@ export default function MatchingPage() {
                                 Find Another Match
                             </button>
                         </div>
-                        
+
                     </div>
                 </div>
             </div>

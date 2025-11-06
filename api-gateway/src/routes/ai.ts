@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken, authorizedRoles, attachUserFromJwt } from "../middleware/jwt";
-import { proxyMiddleware } from "../middleware/proxy";
+import { httpProxy } from "../middleware/proxy";
 import { UserRole } from "shared";
 
 const aiRouter = Router();
@@ -11,7 +11,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -19,7 +19,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -27,7 +27,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -35,7 +35,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -43,7 +43,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -51,7 +51,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 aiRouter.post(
@@ -59,7 +59,7 @@ aiRouter.post(
     verifyAccessToken,
     authorizedRoles([UserRole.USER, UserRole.ADMIN]),
     attachUserFromJwt,
-    proxyMiddleware(AI_SERVICE_URL)
+    httpProxy(AI_SERVICE_URL)
 )
 
 export { aiRouter };
