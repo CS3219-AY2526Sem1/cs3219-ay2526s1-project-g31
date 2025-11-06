@@ -1,6 +1,8 @@
 import express from "express";
 import axios from "axios";
 
+const OLLAMA_HOST = process.env.OLLAMA_HOST!;
+
 interface Message {
   user: string;
   ai: string;
@@ -16,7 +18,7 @@ const memoryStore = new Map();
 // Helper to call Ollama
 async function callOllama(model: string, prompt: string) {
   try {
-    const response = await axios.post("http://localhost:11434/api/generate", {
+    const response = await axios.post(`http://${OLLAMA_HOST}:11434/api/generate`, {
       model,
       prompt,
       stream: false
@@ -338,9 +340,9 @@ router.post("/clear", async (req, res) => {
     const { userIds } = req.body;
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "userIds must be a non-empty array." 
+      return res.status(400).json({
+        success: false,
+        message: "userIds must be a non-empty array."
       });
     }
 
