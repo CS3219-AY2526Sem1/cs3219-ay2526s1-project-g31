@@ -10,8 +10,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.2",
-    "@types/cookie-parser": "^1.4.9",
+    "@prisma/client": "^6.16.3",
+    "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/uuid": "^11.0.0",
     "cookie-parser": "^1.4.7",
