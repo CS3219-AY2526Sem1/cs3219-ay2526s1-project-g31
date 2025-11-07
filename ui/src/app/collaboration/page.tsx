@@ -217,6 +217,26 @@ export default function CollaborationPage() {
         }
     }, []);
 
+    useEffect(() => {
+        if (!user) return;
+
+        const setUserReady = async () => {
+            try {
+                const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/me`, {
+                    method: "POST",
+                    body: JSON.stringify({ userId: user?.id, roomId: roomId }),
+                });
+                
+                if (!res.ok) throw new Error("Failed to ready up user")
+            } catch (err) {
+                console.error("Error notifying user readiness:", err);
+                setError("Failed to set user readiness");
+            }
+        }
+        
+        setUserReady();
+    }, [user])
+
     // UseEffect to create room when both users are ready
     useEffect(() => {
         if (!user || !matchedUser || !roomId) return;

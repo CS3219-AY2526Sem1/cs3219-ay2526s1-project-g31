@@ -5,7 +5,7 @@ import { cancelPoll, cancelSessionClosure, joinRoom, requestSessionClosure, send
 
 const router = express.Router();
 const mutex = new Set();
-const readyUsers: Record<string, Set<User>> = {};
+const readyUsers: Record<string, Set<string>> = {};
 const rooms: Record<string, RoomPayload> = {};
 const docs: Record<string, Y.Doc> = {};
 
@@ -13,14 +13,17 @@ const docs: Record<string, Y.Doc> = {};
  * Sets the ready status of the current user to be true.
  */
 router.post("/me", (req, res) => {
-    const { user, matchedUser } = req.body;
-    const pairKey = [user.id, matchedUser.userId].sort().join("_");
+    const { userId, roomId } = req.body;
+    console.log(`UserID: ${userId}`);
 
-    if (!readyUsers[pairKey]) {
-        console.log("Creating new ready set for pair:", pairKey);
-        readyUsers[pairKey] = new Set();
+    if (!readyUsers[roomId]) {
+        console.log("Creating new ready set for pair:", roomId);
+        readyUsers[roomId] = new Set();
     }
-    if (!readyUsers[pairKey].has(user)) readyUsers[pairKey].add(user);
+    if (!readyUsers[roomId].has(userId)) {
+        console.log(`New UserID: ${userId}`);
+        readyUsers[roomId].add(userId);
+    }
 
     res.json({ status: "ok" });
 });
@@ -33,8 +36,9 @@ router.post("/me", (req, res) => {
  */
 router.get("/users/:userId/:matchedUserId", (req, res) => {
     const { userId, matchedUserId } = req.params;
-    const pairKey = [userId, matchedUserId].sort().join("_");
-    const readySet = readyUsers[pairKey] || new Set();
+    const roomId = [userId, matchedUserId].sort().join("_");
+    const readySet = readyUsers[roomId] || new Set();
+    console.log(`Size: ${readySet.size}`);
     const bothReady = readySet.size === 2;
     res.json({ bothReady });
 });
