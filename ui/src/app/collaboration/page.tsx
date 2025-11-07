@@ -16,6 +16,7 @@ import { useMatch } from "@/contexts/MatchContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoomPayload } from "shared";
 import Link from "next/link";
+import { stdin } from "node:process";
 
 const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"] as const;
 
@@ -62,6 +63,11 @@ export default function CollaborationPage() {
     const [aiMode, setAiMode] = useState<typeof AI_MODES[number]>("hint");
     const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
     const [isSendingAiMessage, setIsSendingAiMessage] = useState<boolean>(false);
+
+    // Compiler Integration
+    const [isCompiling, setIsCompiling] = useState(false);
+    const [compileOutput, setCompileOutput] = useState("");
+    const [isOutputVisible, setIsOutputVisible] = useState(false);
 
     // Language mapping for Editor
     const languageMap = new Map<string, string>([
@@ -611,6 +617,38 @@ export default function CollaborationPage() {
         if (numAiPrompts > 0) setNumAiPrompts(numAiPrompts - 1);
     };
 
+    const handleCompile = async () => {
+        if (!editorRef.current) return;
+
+        const code = editorRef.current.getValue();
+        const language = languageMap.get((matchedUser) ? matchedUser?.language : "python");
+
+        setIsCompiling(true);
+        setCompileOutput("");
+        setIsOutputVisible(true);
+
+        try {
+            const response = await fetch("https://emkc.org/api/v2/piston/execute", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    language,
+                    version: "*",
+                    files: [{ content: code }],
+                    stdin: stdin || "",
+                })
+            });
+
+            const data = await response.json();
+            const output = data.run?.output || "No output from compiler.";
+            setCompileOutput(output);
+        } catch (err) {
+            setCompileOutput("Failed to compile. Check your network or API.");
+        } finally {
+            setIsCompiling(false);
+        }
+    };
+
     if (error) return <div>Error: {error}</div>;
     if (!roomData || !isRoomCreated) return <Spinner size="lg" fullScreen={true} />;
 
@@ -836,6 +874,33 @@ export default function CollaborationPage() {
                                 return () => resizeObserver.disconnect();
                             }}
                         />
+                    </div>
+
+                    {/**
+                     * Compiler Button Strip
+                     */}
+                    <div
+                        className={`mt-2 bg-gray-800 border border-gray-700 rounded-lg overflow-y-auto transition-all duration-300 ${isOutputVisible ? "h-40" : "h-14"
+                            } mb-24`}
+                    >
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+                            <span className="text-gray-300 font-semibold">Compiler</span>
+                            <button
+                                onClick={handleCompile}
+                                disabled={isCompiling}
+                                className={`px-4 py-1.5 rounded-md font-semibold text-sm transition-colors ${isCompiling
+                                        ? "bg-gray-600 text-gray-300"
+                                        : "bg-green-600 hover:bg-green-700 text-white"
+                                    }`}
+                            >
+                                {isCompiling ? "Compiling..." : "Compile"}
+                            </button>
+                        </div>
+
+                        {/* Output area */}
+                        <div className="p-3 text-gray-200 text-sm font-mono overflow-y-auto h-full whitespace-pre-wrap">
+                            {compileOutput || "Click compile to run your code."}
+                        </div>
                     </div>
 
                     {isClosing && (
