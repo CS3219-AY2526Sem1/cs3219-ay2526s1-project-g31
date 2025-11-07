@@ -35,9 +35,15 @@ export default function CollaborationPage() {
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
     const [userClosed, setUserClosed] = useState<string | null>(null);
-    const [messages, setMessages] = useState<[string, string][]>([]);
+    const [messages, setMessages] = useState<[string, string][]>(() => {
+        const stored = window.localStorage.getItem('MY_MESSAGES');
+        return stored ? (JSON.parse(stored) as [string, string][]) : [];
+    });
     const [messageInput, setMessageInput] = useState<string>("");
-    const [numAiPrompts, setNumAiPrompts] = useState<number>(3);
+    const [numAiPrompts, setNumAiPrompts] = useState<number>(() => {
+        const stored = window.localStorage.getItem('NUM_AI_PROMPTS');
+        return stored ? parseInt(stored) : 3;
+    });
     const [roomData, setRoomData] = useState<RoomPayload>();
 
     // References
@@ -48,7 +54,10 @@ export default function CollaborationPage() {
     const socketRef = useRef<Socket | null>(null);
 
     // AI Integration
-    const [aiMessages, setAiMessages] = useState<[string, string][]>([]);
+    const [aiMessages, setAiMessages] = useState<[string, string][]>(() => {
+        const stored = window.localStorage.getItem('MY_AI_MESSAGES');
+        return stored ? (JSON.parse(stored) as [string, string][]) : [];
+    });
     const [aiInput, setAiInput] = useState<string>("");
     const [aiMode, setAiMode] = useState<typeof AI_MODES[number]>("hint");
     const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
@@ -65,6 +74,9 @@ export default function CollaborationPage() {
         ["Ruby", "ruby"],
     ]);
 
+    /**
+     * Handles clean up on unmount
+     */
     useEffect(() => {
         return () => {
             console.log("unmounted");
@@ -339,6 +351,24 @@ export default function CollaborationPage() {
             }
         }, 60000)
     }, [user, matchedUser, roomId]);
+
+    /**
+     * Saves chat messages into local storage
+     */
+    useEffect(() => {
+        window.localStorage.setItem('MY_MESSAGES', JSON.stringify(messages));
+    }, [messages]);
+
+    useEffect(() => {
+        window.localStorage.setItem("NUM_AI_PROMPTS", numAiPrompts.toString());
+    }, [numAiPrompts]);
+
+    /**
+     * Saves ai messages into local storage
+     */
+    useEffect(() => {
+        window.localStorage.setItem('MY_AI_MESSAGES', JSON.stringify(aiMessages));
+    }, [aiMessages]);
 
     /**
      * Handles Yjs document retrieval
@@ -786,7 +816,6 @@ export default function CollaborationPage() {
                             }}
                         />
                     </div>
-
 
                     {isClosing && (
                         <div className="mt-4 bg-yellow-600/20 border border-yellow-600 text-yellow-300 text-center py-3 px-4 rounded-lg shadow-lg transition-all duration-300">

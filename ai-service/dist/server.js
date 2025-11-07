@@ -9,7 +9,6 @@ const http_1 = __importDefault(require("http"));
 const aiRoute_1 = __importDefault(require("./routes/aiRoute"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
-console.log(process.env.UI_BASE_URL);
 app.use((0, cors_1.default)({
     origin: process.env.UI_BASE_URL,
     credentials: true,
