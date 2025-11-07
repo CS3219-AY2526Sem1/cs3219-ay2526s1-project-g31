@@ -95,7 +95,6 @@ export default function CollaborationPage() {
      */
     useEffect(() => {
         try {
-            // Problem is here, when I change port 3004 to port 4000, it stops working
             const socket = io(process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL, {
                 path: '/socket/collaboration',
                 auth: {

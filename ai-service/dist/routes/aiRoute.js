@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
+const OLLAMA_HOST = process.env.OLLAMA_HOST;
 const router = express_1.default.Router();
 // Temporary in-memory memory store
 // Key: sessionId (passed from frontend)
@@ -23,7 +24,7 @@ const memoryStore = new Map();
 function callOllama(model, prompt) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield axios_1.default.post("http://localhost:11434/api/generate", {
+            const response = yield axios_1.default.post(`http://${OLLAMA_HOST}:11434/api/generate`, {
                 model,
                 prompt,
                 stream: false
