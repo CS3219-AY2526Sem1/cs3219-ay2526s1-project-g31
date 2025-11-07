@@ -190,6 +190,7 @@ export default function CollaborationPage() {
                     }
                 }
 
+                localStorage.clear();
                 removeFromCollection(user.id, roomId.split("_"));
                 socket.disconnect();
                 clearMatchedUser();
