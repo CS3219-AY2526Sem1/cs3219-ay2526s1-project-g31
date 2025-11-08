@@ -92,9 +92,9 @@ function requestSessionClosure(roomId: string, userId: string) {
     const users = roomId.split("_");
     if (activeClosures.has(roomId)) return;
 
-    let countdown = 60;
-    socketClients.get(users[0])?.emit("session-closing-start", { countdown, closedBy: userId});
-    socketClients.get(users[1])?.emit("session-closing-start", { countdown, closedBy: userId});
+    let countdown = process.env.COUNTDOWN_SECONDS ? parseInt(process.env.COUNTDOWN_SECONDS) : 60;
+    socketClients.get(users[0])?.emit("session-closing-start", { countdown, closedBy: userId });
+    socketClients.get(users[1])?.emit("session-closing-start", { countdown, closedBy: userId });
 
     const interval = setInterval(() => {
         countdown--;
