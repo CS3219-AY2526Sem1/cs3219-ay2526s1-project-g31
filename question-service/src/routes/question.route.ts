@@ -21,23 +21,23 @@ router.post(
   "/",
   validateQuestion,
   async (req, res) => {
-  try {
-    const { title, description, difficulty, topics } = req.body;
+    try {
+      const { title, description, difficulty, topics } = req.body;
 
-    const question = await prisma.question.create({
-      data: {
-        title,
-        description,
-        difficulty,
-        topics
-      },
-    });
+      const question = await prisma.question.create({
+        data: {
+          title,
+          description,
+          difficulty,
+          topics
+        },
+      });
 
-    res.status(201).json(question);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
+      res.status(201).json(question);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
 
 // Update a question
 router.put("/:id",
@@ -46,16 +46,16 @@ router.put("/:id",
       const { id } = req.params;
       const { title, description, difficulty, topics } = req.body;
 
-    const updated = await prisma.question.update({
-      where: { id },
-      data: { title, description, difficulty, topics },
-    });
+      const updated = await prisma.question.update({
+        where: { id },
+        data: { title, description, difficulty, topics },
+      });
 
-    res.json(updated);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
 
 // Delete a question
 router.delete("/:id",
@@ -65,9 +65,9 @@ router.delete("/:id",
       await prisma.question.delete({ where: { id } });
       res.json({ success: true });
     } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
+      res.status(400).json({ error: err.message });
+    }
+  });
 
 // Get a random question, can filter by topic or difficulty or both
 router.get("/random", async (req, res) => {
@@ -78,13 +78,13 @@ router.get("/random", async (req, res) => {
 
     // normalize difficulty (EASY, MEDIUM, HARD)
     if (difficulty) {
-      const normalizedDifficulty = (difficulty as string).trim().toUpperCase();
+      const normalizedDifficulty = (difficulty as string).trim().toUpperCase().replace(" ", "_");
       filters.difficulty = normalizedDifficulty;
     }
 
     // normalize topic (ARRAY, GRAPH, STRING, etc.)
     if (topic) {
-      const normalizedTopic = (topic as string).trim().toUpperCase();
+      const normalizedTopic = (topic as string).trim().toUpperCase().replace(" ", "_");
       filters.topics = { has: normalizedTopic };
     }
 
