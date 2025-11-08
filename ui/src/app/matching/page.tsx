@@ -144,17 +144,6 @@ export default function MatchingPage() {
         }
 
         console.log(`[Matching Page] ${user?.displayName} clicked Join Room`);
-
-        try {
-            await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/me`, {
-                method: "POST",
-                body: JSON.stringify({ user: user, matchedUser: matchedUser }),
-            });
-        } catch (err) {
-            console.error("Error notifying user readiness:", err);
-            setError("Failed to set user readiness");
-        }
-
         const roomId = [user.id, matchedUser.userId].sort().join("_");
         router.push(`/collaboration?roomId=${roomId}`);
     };

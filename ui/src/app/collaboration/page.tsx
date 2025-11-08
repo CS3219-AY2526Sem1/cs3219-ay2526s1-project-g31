@@ -16,6 +16,7 @@ import { useMatch } from "@/contexts/MatchContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { RoomPayload } from "shared";
 import Link from "next/link";
+import { stdin } from "node:process";
 
 const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"] as const;
 
@@ -35,9 +36,15 @@ export default function CollaborationPage() {
     const [isRoomCreated, setIsRoomCreated] = useState<boolean>(false);
     const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
     const [userClosed, setUserClosed] = useState<string | null>(null);
-    const [messages, setMessages] = useState<[string, string][]>([]);
+    const [messages, setMessages] = useState<[string, string][]>(() => {
+        const stored = window.localStorage.getItem('MY_MESSAGES');
+        return stored ? (JSON.parse(stored) as [string, string][]) : [];
+    });
     const [messageInput, setMessageInput] = useState<string>("");
-    const [numAiPrompts, setNumAiPrompts] = useState<number>(3);
+    const [numAiPrompts, setNumAiPrompts] = useState<number>(() => {
+        const stored = window.localStorage.getItem('NUM_AI_PROMPTS');
+        return stored ? parseInt(stored) : 3;
+    });
     const [roomData, setRoomData] = useState<RoomPayload>();
 
     // References
@@ -48,11 +55,19 @@ export default function CollaborationPage() {
     const socketRef = useRef<Socket | null>(null);
 
     // AI Integration
-    const [aiMessages, setAiMessages] = useState<[string, string][]>([]);
+    const [aiMessages, setAiMessages] = useState<[string, string][]>(() => {
+        const stored = window.localStorage.getItem('MY_AI_MESSAGES');
+        return stored ? (JSON.parse(stored) as [string, string][]) : [];
+    });
     const [aiInput, setAiInput] = useState<string>("");
     const [aiMode, setAiMode] = useState<typeof AI_MODES[number]>("hint");
     const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
     const [isSendingAiMessage, setIsSendingAiMessage] = useState<boolean>(false);
+
+    // Compiler Integration
+    const [isCompiling, setIsCompiling] = useState(false);
+    const [compileOutput, setCompileOutput] = useState("");
+    const [isOutputVisible, setIsOutputVisible] = useState(false);
 
     // Language mapping for Editor
     const languageMap = new Map<string, string>([
@@ -65,6 +80,9 @@ export default function CollaborationPage() {
         ["Ruby", "ruby"],
     ]);
 
+    /**
+     * Handles clean up on unmount
+     */
     useEffect(() => {
         return () => {
             console.log("unmounted");
@@ -95,7 +113,6 @@ export default function CollaborationPage() {
      */
     useEffect(() => {
         try {
-            // Problem is here, when I change port 3004 to port 4000, it stops working
             const socket = io(process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL, {
                 path: '/socket/collaboration',
                 auth: {
@@ -178,11 +195,13 @@ export default function CollaborationPage() {
                         setError('Failed to close session');
                     }
                 }
-
                 removeFromCollection(user.id, roomId.split("_"));
                 socket.disconnect();
                 clearMatchedUser();
                 clearSessionStorage();
+                localStorage.removeItem("MY_MESSAGES");
+                localStorage.removeItem("MY_AI_MESSAGES");
+                localStorage.removeItem("NUM_AI_PROMPTS");
                 setIsClosing(false);
                 setCountdown(null);
                 setCodespace(null);
@@ -205,6 +224,26 @@ export default function CollaborationPage() {
             }
         }
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const setUserReady = async () => {
+            try {
+                const res = await authFetch(`${process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL}/api/roomSetup/me`, {
+                    method: "POST",
+                    body: JSON.stringify({ userId: user?.id, roomId: roomId }),
+                });
+
+                if (!res.ok) throw new Error("Failed to ready up user")
+            } catch (err) {
+                console.error("Error notifying user readiness:", err);
+                setError("Failed to set user readiness");
+            }
+        }
+
+        setUserReady();
+    }, [user])
 
     // UseEffect to create room when both users are ready
     useEffect(() => {
@@ -340,6 +379,24 @@ export default function CollaborationPage() {
             }
         }, 60000)
     }, [user, matchedUser, roomId]);
+
+    /**
+     * Saves chat messages into local storage
+     */
+    useEffect(() => {
+        window.localStorage.setItem('MY_MESSAGES', JSON.stringify(messages));
+    }, [messages]);
+
+    useEffect(() => {
+        window.localStorage.setItem("NUM_AI_PROMPTS", numAiPrompts.toString());
+    }, [numAiPrompts]);
+
+    /**
+     * Saves ai messages into local storage
+     */
+    useEffect(() => {
+        window.localStorage.setItem('MY_AI_MESSAGES', JSON.stringify(aiMessages));
+    }, [aiMessages]);
 
     /**
      * Handles Yjs document retrieval
@@ -487,7 +544,7 @@ export default function CollaborationPage() {
         }
 
         if (!isClosing) {
-            if (confirm("Do you want to close the session in 1 minute?")) {
+            if (confirm("Do you want to close the session?")) {
                 if (user?.id !== undefined) {
                     setUserClosed(user.id);
                     requestSessionClosing(user.id);
@@ -559,6 +616,38 @@ export default function CollaborationPage() {
         }
 
         if (numAiPrompts > 0) setNumAiPrompts(numAiPrompts - 1);
+    };
+
+    const handleCompile = async () => {
+        if (!editorRef.current) return;
+
+        const code = editorRef.current.getValue();
+        const language = languageMap.get((matchedUser) ? matchedUser?.language : "python");
+
+        setIsCompiling(true);
+        setCompileOutput("");
+        setIsOutputVisible(true);
+
+        try {
+            const response = await fetch("https://emkc.org/api/v2/piston/execute", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    language,
+                    version: "*",
+                    files: [{ content: code }],
+                    stdin: stdin || "",
+                })
+            });
+
+            const data = await response.json();
+            const output = data.run?.output || "No output from compiler.";
+            setCompileOutput(output);
+        } catch (err) {
+            setCompileOutput("Failed to compile. Check your network or API.");
+        } finally {
+            setIsCompiling(false);
+        }
     };
 
     if (error) return <div>Error: {error}</div>;
@@ -788,10 +877,36 @@ export default function CollaborationPage() {
                         />
                     </div>
 
+                    {/**
+                     * Compiler Button Strip
+                     */}
+                    <div
+                        className={`mt-2 bg-gray-800 border border-gray-700 rounded-lg overflow-y-auto transition-all duration-300 ${isOutputVisible ? "h-40" : "h-14"
+                            } mb-24`}
+                    >
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+                            <span className="text-gray-300 font-semibold">Compiler</span>
+                            <button
+                                onClick={handleCompile}
+                                disabled={isCompiling}
+                                className={`px-4 py-1.5 rounded-md font-semibold text-sm transition-colors ${isCompiling
+                                    ? "bg-gray-600 text-gray-300"
+                                    : "bg-green-600 hover:bg-green-700 text-white"
+                                    }`}
+                            >
+                                {isCompiling ? "Compiling..." : "Compile"}
+                            </button>
+                        </div>
+
+                        {/* Output area */}
+                        <div className="p-3 text-gray-200 text-sm font-mono overflow-y-auto h-full whitespace-pre-wrap">
+                            {compileOutput || "Click compile to run your code."}
+                        </div>
+                    </div>
 
                     {isClosing && (
                         <div className="mt-4 bg-yellow-600/20 border border-yellow-600 text-yellow-300 text-center py-3 px-4 rounded-lg shadow-lg transition-all duration-300">
-                            <span className="font-semibold">⚠️ Session ending in {countdown ?? 60}s</span>
+                            <span className="font-semibold">⚠️ Session ending in {countdown ?? 10}s</span>
                             <span className="text-sm block mt-1">Editor is now locked</span>
                         </div>
                     )}
