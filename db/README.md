@@ -28,8 +28,5 @@ docker exec -it mongo mongosh
 To set an admin user in mongosh, run the following command:
 
 ```
-db.User.updateOne(
-  { email: "<USER_EMAIL>" },
-  { $set: { role: "ADMIN" } }
-)
+db.User.updateOne( { email: "<USER_EMAIL>" }, { $set: { role: "ADMIN" } })
 ```
