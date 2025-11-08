@@ -195,12 +195,13 @@ export default function CollaborationPage() {
                         setError('Failed to close session');
                     }
                 }
-
-                localStorage.clear();
                 removeFromCollection(user.id, roomId.split("_"));
                 socket.disconnect();
                 clearMatchedUser();
                 clearSessionStorage();
+                localStorage.removeItem("MY_MESSAGES");
+                localStorage.removeItem("MY_AI_MESSAGES");
+                localStorage.removeItem("NUM_AI_PROMPTS");
                 setIsClosing(false);
                 setCountdown(null);
                 setCodespace(null);
@@ -233,14 +234,14 @@ export default function CollaborationPage() {
                     method: "POST",
                     body: JSON.stringify({ userId: user?.id, roomId: roomId }),
                 });
-                
+
                 if (!res.ok) throw new Error("Failed to ready up user")
             } catch (err) {
                 console.error("Error notifying user readiness:", err);
                 setError("Failed to set user readiness");
             }
         }
-        
+
         setUserReady();
     }, [user])
 
@@ -543,7 +544,7 @@ export default function CollaborationPage() {
         }
 
         if (!isClosing) {
-            if (confirm("Do you want to close the session in 1 minute?")) {
+            if (confirm("Do you want to close the session?")) {
                 if (user?.id !== undefined) {
                     setUserClosed(user.id);
                     requestSessionClosing(user.id);
@@ -889,8 +890,8 @@ export default function CollaborationPage() {
                                 onClick={handleCompile}
                                 disabled={isCompiling}
                                 className={`px-4 py-1.5 rounded-md font-semibold text-sm transition-colors ${isCompiling
-                                        ? "bg-gray-600 text-gray-300"
-                                        : "bg-green-600 hover:bg-green-700 text-white"
+                                    ? "bg-gray-600 text-gray-300"
+                                    : "bg-green-600 hover:bg-green-700 text-white"
                                     }`}
                             >
                                 {isCompiling ? "Compiling..." : "Compile"}
@@ -905,7 +906,7 @@ export default function CollaborationPage() {
 
                     {isClosing && (
                         <div className="mt-4 bg-yellow-600/20 border border-yellow-600 text-yellow-300 text-center py-3 px-4 rounded-lg shadow-lg transition-all duration-300">
-                            <span className="font-semibold">⚠️ Session ending in {countdown ?? 60}s</span>
+                            <span className="font-semibold">⚠️ Session ending in {countdown ?? 10}s</span>
                             <span className="text-sm block mt-1">Editor is now locked</span>
                         </div>
                     )}
