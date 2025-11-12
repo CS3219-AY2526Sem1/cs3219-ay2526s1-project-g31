@@ -1,0 +1,116 @@
+name: peerprep
+services:
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    image: ui:latest
+    env_file:
+      - ./ui/.env
+    ports:
+      - "3000:3000"
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: api-gateway:latest
+    env_file:
+      - ./.env.production.local
+    ports:
+      - "4000:4000"
+    networks:
+      - peerprep
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    image: user-service:latest
+    hostname: "user-service"
+    env_file:
+      - ./user-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
+    depends_on:
+      - mongo-init
+  matching-service:
+    build:
+      context: .
+      dockerfile: matching-service/Dockerfile
+    image: matching-service:latest
+    hostname: "matching-service"
+    env_file:
+      - ./matching-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
+    depends_on:
+      - redis
+  question-service:
+    build:
+      context: .
+      dockerfile: question-service/Dockerfile
+    image: question-service:latest
+    hostname: "question-service"
+    env_file:
+      - ./question-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
+    depends_on:
+      - mongo-init
+  collaboration-service:
+    build:
+      context: .
+      dockerfile: collaboration-service/Dockerfile
+    image: collaboration-service:latest
+    hostname: "collaboration-service"
+    env_file:
+      - ./collaboration-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    image: ai-service:latest
+    hostname: "ai-service"
+    env_file:
+      - ./ai-service/.env.production.local
+      - ./.env.production.local
+    networks:
+      - peerprep
+  redis:
+    image: redis:latest
+    hostname: "redis"
+    command: redis-server --requirepass ${REDIS_PASSWORD} --notify-keyspace-events Ex
+    volumes:
+      - ./db/redis_data_build:/data/db
+    networks:
+      - peerprep
+  mongo:
+    image: mongo
+    hostname: "mongo"
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    volumes:
+      - ./db/mongo_data_build:/data/db
+    networks:
+      - peerprep
+  mongo-init:
+    image: mongo
+    volumes:
+      - ./db/config/init-mongo.sh:/init-mongo.sh
+    entrypoint: sh /init-mongo.sh
+    networks:
+      - peerprep
+    depends_on:
+      - mongo
+
+networks:
+  peerprep:
+
+
+volumes:
+  redis_data:
+  mongo_data:

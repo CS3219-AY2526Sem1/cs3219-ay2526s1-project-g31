@@ -1,0 +1,7 @@
+.env
+.env.production.local
+env_files.zip
+redis_data
+redis_data_build
+mongo_data
+mongo_data_build
