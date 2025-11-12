@@ -1,3 +1,8 @@
+#### **AI Assistance Disclosure**
+**Tool**: Microsoft Copilot  
+**Scope**: Generated several sections (see AI-usage-log for details).  
+**Author review**: Validated correctness and edited for style.  
+
 # Question Service
 
 ## Service Description

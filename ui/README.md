@@ -1,3 +1,10 @@
+#### **AI Assistance Disclosure**
+**Tool**: Microsoft Copilot  
+**Scope**: Generated several sections (see AI-usage-log for details).  
+**Author review**: Validated correctness and edited for style.  
+
+---
+
 # UI - Frontend Application
 
 ## Service Description
@@ -28,6 +35,7 @@ NEXT_PUBLIC_USER_SERVICE_BASE_URL=http://localhost:4000        # User/Auth endpo
 NEXT_PUBLIC_MATCHING_SERVICE_BASE_URL=http://localhost:4000    # Matching endpoints
 NEXT_PUBLIC_QUESTION_SERVICE_BASE_URL=http://localhost:4000    # Question endpoints
 NEXT_PUBLIC_COLLABORATION_SERVICE_BASE_URL=http://localhost:4000  # Collaboration endpoints
+NEXT_PUBLIC_AI_SERVICE_BASE_URL=http://localhost:4000 # AI endpoints
 ```
 
 **Note**: All services point to the API Gateway (port 4000) which handles routing to backend services.

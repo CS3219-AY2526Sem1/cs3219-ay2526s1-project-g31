@@ -3,6 +3,13 @@ import { randomUUID } from 'crypto';
 import { JWT_REFRESH_EXPIRES_DAYS } from './jwt';
 
 /**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Debugged prisma calls.
+ * Author review: Validated correctness.
+ */
+
+/**
  * Create a new refresh token record in the database
  */
 export async function createRefreshToken(userId: string): Promise<string> {

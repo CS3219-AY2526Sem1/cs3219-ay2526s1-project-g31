@@ -2,6 +2,13 @@ import express from "express";
 import { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const prisma = new PrismaClient();
 const router = express.Router();
 

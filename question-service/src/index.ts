@@ -1,6 +1,13 @@
 import dotenv from "dotenv";
 import path from "path";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: Debugged seeding function.
+ * Author review: Validated correctness.
+ */
+
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 

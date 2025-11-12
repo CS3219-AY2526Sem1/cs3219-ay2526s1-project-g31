@@ -1,6 +1,13 @@
 import express from "express";
 import axios from "axios";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const OLLAMA_HOST = process.env.OLLAMA_HOST!;
 
 interface Message {

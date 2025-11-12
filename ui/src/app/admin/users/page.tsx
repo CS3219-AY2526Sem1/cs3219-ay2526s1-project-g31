@@ -5,6 +5,13 @@ import { User } from 'shared';
 import { useState } from 'react';
 import Image from 'next/image';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 export default function AdminUsersPage() {
     const { authFetch, refreshAccessToken } = useAuth();
 

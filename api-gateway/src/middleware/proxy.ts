@@ -1,5 +1,12 @@
 import { createProxyMiddleware, fixRequestBody } from "http-proxy-middleware";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Debugged proxy logic.
+ * Author review: Validated correctness.
+ */
+
 export function httpProxy(targetUrl: string, route?: string) {
     return createProxyMiddleware({
         target: targetUrl,

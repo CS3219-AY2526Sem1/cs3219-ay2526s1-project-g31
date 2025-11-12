@@ -6,6 +6,13 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 export default function Profile() {
     const router = useRouter();
     const { isLoading, accessToken, logout, authFetch } = useAuth();

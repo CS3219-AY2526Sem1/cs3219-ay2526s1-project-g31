@@ -2,6 +2,13 @@ import passport from "passport";
 import { prisma } from "../db/prisma";
 import { Strategy, Profile, VerifyCallback } from "passport-google-oauth20";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Debugged passport logic.
+ * Author review: Validated correctness.
+ */
+
 passport.serializeUser((user: any, done) => {
     done(null, user.google_id);
 });

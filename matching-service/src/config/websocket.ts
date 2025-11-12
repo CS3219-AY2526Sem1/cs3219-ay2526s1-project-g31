@@ -3,6 +3,13 @@ import { Server, Socket } from "socket.io";
 import { cleanupExpired } from "./redis";
 import { UserMatchInfo } from "../constants/match";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Generated initial WebSocket configuration.
+ * Author review: See AI-usage-log for details.
+ */
+
 interface JwtPayload {
     userId: string;
     userRole: string;

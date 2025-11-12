@@ -3,6 +3,13 @@ import Spinner from '@/components/Spinner';
 import { useRouter } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Debugged useCallback function.
+ * Author review: Validated correctness.
+ */
+
 interface AuthContextType {
     isLoading: boolean;
     accessToken: string | null;

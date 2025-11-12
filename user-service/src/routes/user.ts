@@ -5,6 +5,13 @@ import { validate } from "../middleware/validate";
 import { AuthRequest } from "shared";
 import { adminUpdateUserSchema, idParamSchema, searchUsersQuerySchema, updateMeSchema } from "../validators/user";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Debugged user account logic.
+ * Author review: Validated correctness.
+ */
+
 const router = Router();
 
 router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
