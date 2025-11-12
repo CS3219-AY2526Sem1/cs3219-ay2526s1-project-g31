@@ -63,6 +63,7 @@ function getCompatibleQueueKeys(difficulty: string, topic: string, language: str
     for (const d of difficulties) {
         for (const t of topics) {
             for (const l of languages) {
+                if (d === difficulty && t === topic && l === language) continue; // skip exact match
                 keys.add(`queue:${d}:${t}:${l}`);
             }
         }
@@ -108,23 +109,42 @@ async function enqueueUser(userInfo: UserMatchInfo) {
 }
 
 async function dequeueUsers(difficulty: string, topic: string, language: string): Promise<[UserMatchInfo, UserMatchInfo][]> {
-    // Get all compatible queue keys
+    // Get all users in the exact matching queue
+    const criterionList = [...await redis.zrange(getQueueKey(difficulty, topic, language), 0, -1)];
+
+    // Get all compatible candidates sorted by timestamp
     const queues = getCompatibleQueueKeys(difficulty, topic, language);
-    const candidates = new Set<string>();
-    for (const q of queues) {
-        const users = await redis.zrange(q, 0, -1);
-        users.forEach(u => candidates.add(u));
+    const queueResults = await Promise.all(queues.map(q => redis.zrange(q, 0, -1, "WITHSCORES")));
+    const candidates = new Map<string, number>();
+    for (const result of queueResults) {
+        for (let i = 0; i < result.length; i += 2) {
+            const userId = result[i];
+            const score = parseFloat(result[i + 1]);
+            // in case of multiple users in different queues, keep the one with the earliest timestamp
+            if (!candidates.has(userId) || candidates.get(userId)! > score) {
+                candidates.set(userId, score);
+            }
+        }
     }
+    const candidateList = Array.from(candidates.entries())
+        .sort((a, b) => a[1] - b[1]) // sort by timestamp (score)
+        .map(entry => entry[0]);
 
-    const candidateList = Array.from(candidates);
-    if (candidateList.length < 2) {
-        return [];
-    }
-
+    // Try to pair users from criterionList with users from candidateList
     const pairs: [UserMatchInfo, UserMatchInfo][] = [];
-    for (let i = 0; i + 1 < candidateList.length; i += 2) {
-        const userId1 = candidateList[i];
-        const userId2 = candidateList[i + 1];
+    for (let i = 0; i < criterionList.length; i++) {
+        let userId1: string;
+        let userId2: string;
+        if (i < candidateList.length) {
+            userId1 = criterionList[i];
+            userId2 = candidateList[i];
+        } else if (i + 1 < criterionList.length) {
+            userId1 = criterionList[i];
+            userId2 = criterionList[i + 1];
+            i++; // skip paired user
+        } else {
+            break; // no more users to pair
+        }
         const [userInfo1, userInfo2, userTtl1, userTtl2] = await redis.mget(
             `user:${userId1}`,
             `user:${userId2}`,
