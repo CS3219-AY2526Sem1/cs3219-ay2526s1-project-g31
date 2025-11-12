@@ -1,3 +1,10 @@
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Generated schema for matching criterias based on requirements.
+ * Author review: Validated correctness.  
+ */
+
 const difficulty = {
     EASY: 'Easy',
     MEDIUM: 'Medium',

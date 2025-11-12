@@ -18,6 +18,13 @@ import { RoomPayload } from "shared";
 import Link from "next/link";
 import { stdin } from "node:process";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const AI_MODES = ["hint", "suggest", "explain", "debug", "refactor", "testcases"] as const;
 
 export default function CollaborationPage() {

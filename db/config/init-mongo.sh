@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# AI Assistance Disclosure
+# Tool: ChatGPT  
+# Scope: Debugged to ensure successful MongoDB connection and proper replica set initialisation.  
+# Author review: I validated correctness. 
+
 MONGO_HOST=mongo
 REPL_SET=rs0
 

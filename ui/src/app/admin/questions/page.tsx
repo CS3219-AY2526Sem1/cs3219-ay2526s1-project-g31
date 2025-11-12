@@ -4,6 +4,13 @@ import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 // shape should match your Prisma model
 type Question = {
   id: string;

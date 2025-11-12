@@ -1,6 +1,13 @@
 import jwt from "jsonwebtoken"
 import { Server, Socket } from "socket.io";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: Assisted in interval implementation in requestSessionClosure function.
+ * Author review: Validated correctness.
+ */
+
 interface JwtPayload {
     userId: string;
     userRole: string;

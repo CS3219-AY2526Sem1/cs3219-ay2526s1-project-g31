@@ -1,3 +1,8 @@
+#### **AI Assistance Disclosure**
+**Tool**: Microsoft Copilot  
+**Scope**: Generated several sections (see AI-usage-log for details).  
+**Author review**: Validated correctness and edited for style.  
+
 ### AI Service
 esponsible for providing intelligent assistance within the PeerPrep platform. It enables AI-assisted explanations, problem solving, and conceptual expansion for coding tasks. Users can receive contextual explanations of code, hints, suggestions for debugging, and test-case generation, enhancing collaboration and learning experiences.
 

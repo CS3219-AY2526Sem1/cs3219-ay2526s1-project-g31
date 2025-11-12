@@ -11,6 +11,13 @@ import Header from "@/components/Header";
 import { difficulty as d, topic as t, language as l } from "@/constants/question";
 import { io, Socket } from "socket.io-client";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT, Microsoft Copilot
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const Difficulty = { ...d, ANY: 'Any' };
 const Topic = { ...t, ANY: 'Any' };
 const Language = { ...l, ANY: 'Any' };

@@ -2,6 +2,13 @@ import { NextFunction, Request, Response } from 'express';
 import { ZodError, z } from 'zod';
 import { $ZodIssue } from 'zod/v4/core';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: Debugged schema logic.
+ * Author review: Validated correctness.
+ */
+
 export type ValidationTargets = {
     body?: z.ZodTypeAny;
     query?: z.ZodTypeAny;

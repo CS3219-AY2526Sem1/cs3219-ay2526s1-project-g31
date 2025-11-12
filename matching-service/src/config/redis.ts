@@ -4,6 +4,13 @@ import { normalise } from "../utils/match";
 import { UserMatchInfo, MATCH_TTL } from "../constants/match";
 import { allDifficulties, allTopics, allLanguages } from "../constants/question";
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const redis = new Redis({
     host: process.env.REDIS_HOST!,
     port: parseInt(process.env.REDIS_PORT!),

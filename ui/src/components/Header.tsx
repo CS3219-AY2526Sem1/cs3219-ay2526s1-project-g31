@@ -5,6 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: Generated initial code consisting of title section, user avatar and logout button.
+ * Author review: See AI-usage-log for details.
+ */
+
 export default function Header() {
     const { accessToken, logout } = useAuth();
     const { user } = useUser();

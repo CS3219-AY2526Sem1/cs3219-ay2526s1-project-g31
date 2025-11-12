@@ -1,3 +1,10 @@
+/**
+ * AI Assistance Disclosure
+ * Tool: Microsoft Copilot
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 interface SpinnerProps {
     size?: 'sm' | 'md' | 'lg';
     color?: 'blue' | 'gray' | 'green' | 'red' | 'white';

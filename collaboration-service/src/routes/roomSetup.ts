@@ -3,6 +3,13 @@ import * as Y from "yjs";
 import { Question, RoomPayload, User } from 'shared';
 import { cancelPoll, cancelSessionClosure, joinRoom, requestSessionClosure, sendAiMessage, sendMessage } from '../sockets/socketServer';
 
+/**
+ * AI Assistance Disclosure
+ * Tool: ChatGPT
+ * Scope: See AI-usage-log for details.
+ * Author review: See AI-usage-log for details.
+ */
+
 const router = express.Router();
 const mutex = new Set();
 const readyUsers: Record<string, Set<string>> = {};
